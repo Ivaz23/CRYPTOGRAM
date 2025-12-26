@@ -3,25 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cryptogram Mobile</title>
+    <title>Криптограмма: Буквы и Цифры</title>
+    <!-- Подключаем SDK Яндекс Игр -->
+    <script src="https://yandex.ru/games/sdk/v2"></script>
     <style>
         :root {
-            --bg: #fdfdfd;
+            --bg: #f4f6f9;
             --card: #ffffff;
-            --text: #2c3e50;
-            --primary: #3498db;
+            --primary: #4a90e2;
             --correct: #2ecc71;
             --error: #e74c3c;
-            --border: #dcdde1;
-            --cell-size: 42px;
-            --word-spacing: 20px; /* Тот самый отступ между словами */
+            --text: #2c3e50;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
         body {
-            font-family: -apple-system, system-ui, sans-serif;
-            background-color: var(--bg);
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
             color: var(--text);
             margin: 0;
             display: flex;
@@ -30,281 +27,315 @@
             overflow: hidden;
         }
 
+        /* Верхняя панель */
         header {
-            height: 60px;
+            background: #fff;
+            padding: 10px 20px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            background: var(--card);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            font-weight: 800;
-            letter-spacing: 1px;
-            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        /* Игровое поле */
-        #game-board {
+        .balance { font-weight: bold; color: #f39c12; font-size: 1.2rem; }
+        
+        .hint-btn {
+            background: #9b59b6;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Игровое поле (Адаптация под Альбомную ориентацию) */
+        #game-area {
             flex: 1;
-            padding: 25px 15px;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        #puzzle-container {
+            flex: 2;
             display: flex;
             flex-wrap: wrap;
-            justify-content: center;
             align-content: flex-start;
+            justify-content: center;
+            gap: 15px;
             overflow-y: auto;
-            gap: 10px; /* Расстояние между ячейками */
+            padding-right: 10px;
         }
 
-        /* Контейнер для слова — чтобы буквы внутри слова не разрывались */
         .word {
             display: flex;
-            gap: 4px;
-            margin-right: var(--word-spacing); /* Отступ между словами */
-            margin-bottom: 25px; /* Отступ между строками */
+            gap: 5px;
+            margin-right: 25px; /* Разделение слов */
+            margin-bottom: 20px;
         }
 
         .cell {
-            width: var(--cell-size);
+            width: 45px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            cursor: pointer;
         }
 
         .letter-box {
             width: 100%;
-            height: 46px;
-            background: var(--card);
-            border: 2px solid var(--border);
+            height: 50px;
+            background: white;
+            border: 2px solid #bdc3c7;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            transition: all 0.15s ease;
-            box-shadow: 0 2px 0 #eee;
+            box-shadow: 0 2px 0 #ddd;
         }
 
-        .num-label {
-            margin-top: 5px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #95a5a6;
-        }
+        .num-label { margin-top: 5px; font-size: 0.8rem; color: #7f8c8d; font-weight: bold; }
 
-        /* Состояния ячеек */
-        .cell.selected .letter-box {
-            border-color: var(--primary);
-            background: #ebf5fb;
-            transform: scale(1.05);
-        }
-
-        .cell.correct .letter-box {
-            background: #f0fff4;
-            border-color: var(--correct);
-            color: var(--correct);
-        }
-
-        .cell.error .letter-box {
-            border-color: var(--error);
-            color: var(--error);
-            animation: shake 0.4s ease;
-        }
+        /* Интерактив */
+        .cell.selected .letter-box { border-color: var(--primary); background: #ebf5fb; transform: scale(1.05); }
+        .cell.correct .letter-box { color: var(--correct); border-color: var(--correct); background: #f0fff4; }
+        .cell.error .letter-box { color: var(--error); border-color: var(--error); animation: shake 0.3s; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
         }
 
-        /* Клавиатура */
+        /* Клавиатура (справа в альбомной ориентации) */
         #keyboard {
-            background: #d1d5db;
-            padding: 8px 4px env(safe-area-inset-bottom, 8px);
+            flex: 1;
+            max-width: 350px;
             display: grid;
-            grid-template-columns: repeat(11, 1fr);
-            gap: 4px;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            background: #d1d5db;
+            padding: 10px;
+            border-radius: 12px;
+            align-content: center;
         }
 
         .key {
-            background: #fff;
-            height: 48px;
+            background: white;
+            height: 50px;
             border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            cursor: pointer;
+            box-shadow: 0 2px 0 #999;
         }
 
-        .key:active { background: #adb5bd; }
+        .key:active { transform: translateY(2px); box-shadow: none; }
 
-        /* Модалка победы */
-        #win-screen {
+        /* Окно победы */
+        #win-modal {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(255,255,255,0.95);
+            background: rgba(0,0,0,0.8);
             z-index: 100;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
+            color: white;
         }
 
-        .btn {
-            padding: 12px 35px;
+        .next-lvl {
             background: var(--correct);
-            color: white;
+            padding: 15px 40px;
             border: none;
-            border-radius: 25px;
+            color: white;
+            border-radius: 30px;
+            font-size: 1.2rem;
             font-weight: bold;
+            cursor: pointer;
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-<header>КРИПТОГРАММА</header>
+<header>
+    <div class="balance" id="coins">🪙 100</div>
+    <div style="font-weight: 900; letter-spacing: 2px;">КРИПТОГРАММА</div>
+    <button class="hint-btn" onclick="showRewardedHint()">💡 ПОДСКАЗКА (AD)</button>
+</header>
 
-<div id="game-board"></div>
+<main id="game-area">
+    <div id="puzzle-container"></div>
+    <div id="keyboard"></div>
+</main>
 
-<div id="keyboard"></div>
-
-<div id="win-screen">
-    <h1 style="font-size: 4rem; margin: 0;">⭐️</h1>
-    <h2>Уровень пройден!</h2>
-    <p id="phrase-res" style="padding: 0 30px; font-style: italic;"></p>
-    <button class="btn" onclick="location.reload()">ДАЛЕЕ</button>
+<div id="win-modal">
+    <h1 style="font-size: 4rem;">🎉</h1>
+    <h2>УРОВЕНЬ ПРОЙДЕН!</h2>
+    <p id="phrase-out" style="font-style: italic; opacity: 0.8;"></p>
+    <button class="next-lvl" onclick="nextLevel()">СЛЕДУЮЩИЙ УРОВЕНЬ</button>
 </div>
 
 <script>
+    let sdk, phrase, charMap, numMap, solvedNums, coins, selectedNum;
+
+    // 1. Инициализация SDK
+    YaGames.init().then(ysdk => {
+        sdk = ysdk;
+        console.log("Yandex SDK initialized");
+        loadData(); // Загружаем сохранения (монеты, уровень)
+        startLevel();
+        
+        // Показ первой рекламы при входе
+        sdk.adv.showFullscreenAdv();
+    });
+
     const phrases = [
-        "ЗНАНИЕ ЭТО СИЛА",
-        "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ",
-        "СЕМЬ РАЗ ОТМЕРЬ ОДИН ОТРЕЖЬ",
-        "ВЕК ЖИВИ ВЕК УЧИСЬ",
-        "ДВИЖЕНИЕ ЭТО ЖИЗНЬ"
+        "ЗНАНИЕ ЭТО СИЛА", "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ", 
+        "СЕМЬ РАЗ ОТМЕРЬ ОДИН ОТРЕЖЬ", "ВЕК ЖИВИ ВЕК УЧИСЬ"
     ];
 
-    let currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-    let mapping = {};      // Буква -> Число
-    let revMapping = {};   // Число -> Буква
-    let solvedNums = [];   // Список уже угаданных чисел
-    let selectedNum = null;
-
-    function init() {
-        const letters = [...new Set(currentPhrase.replace(/\s/g, '').split(''))];
+    function startLevel() {
+        phrase = phrases[Math.floor(Math.random() * phrases.length)];
+        charMap = {}; numMap = {}; solvedNums = [];
+        
+        const letters = [...new Set(phrase.replace(/\s/g, '').split(''))];
         const nums = Array.from({length: 33}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
 
-        letters.forEach((char, i) => {
-            mapping[char] = nums[i];
-            revMapping[nums[i]] = char;
+        letters.forEach((l, i) => {
+            charMap[l] = nums[i];
+            numMap[nums[i]] = l;
         });
 
-        // Открываем 3 буквы как подсказки
-        const hints = letters.sort(() => Math.random() - 0.5).slice(0, 3);
-        hints.forEach(l => solvedNums.push(mapping[l]));
+        // Даем 3 подсказки в начале
+        letters.sort(() => Math.random() - 0.5).slice(0, 3).forEach(l => solvedNums.push(charMap[l]));
 
         renderBoard();
         renderKeyboard();
     }
 
     function renderBoard() {
-        const board = document.getElementById('game-board');
-        board.innerHTML = '';
-
-        currentPhrase.split(' ').forEach(word => {
+        const cont = document.getElementById('puzzle-container');
+        cont.innerHTML = '';
+        phrase.split(' ').forEach(word => {
             const wordDiv = document.createElement('div');
             wordDiv.className = 'word';
-            
             [...word].forEach(char => {
-                const num = mapping[char];
+                const n = charMap[char];
                 const cell = document.createElement('div');
-                cell.className = `cell num-${num}`;
-                if (solvedNums.includes(num)) cell.classList.add('correct');
-                
-                cell.innerHTML = `
-                    <div class="letter-box">${solvedNums.includes(num) ? char : ''}</div>
-                    <div class="num-label">${num}</div>
-                `;
-                
-                cell.onclick = () => selectCell(num);
+                cell.className = `cell num-${n} ${solvedNums.includes(n) ? 'correct' : ''}`;
+                cell.innerHTML = `<div class="letter-box">${solvedNums.includes(n) ? char : ''}</div>
+                                  <div class="num-label">${n}</div>`;
+                cell.onclick = () => selectCell(n);
                 wordDiv.appendChild(cell);
             });
-            board.appendChild(wordDiv);
+            cont.appendChild(wordDiv);
         });
     }
 
-    function selectCell(num) {
-        if (solvedNums.includes(num)) return;
-        selectedNum = num;
-        
-        document.querySelectorAll('.cell').forEach(c => {
-            c.classList.remove('selected');
-            if (c.classList.contains(`num-${num}`)) c.classList.add('selected');
-        });
+    function selectCell(n) {
+        if (solvedNums.includes(n)) return;
+        selectedNum = n;
+        document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll(`.num-${n}`).forEach(c => c.classList.add('selected'));
     }
 
     function handleInput(key) {
-        if (!selectedNum || solvedNums.includes(selectedNum)) return;
-
-        const correctChar = revMapping[selectedNum];
+        if (!selectedNum) return;
+        const correct = numMap[selectedNum];
         const cells = document.querySelectorAll(`.num-${selectedNum}`);
 
-        if (key === correctChar) {
-            // ПРАВИЛЬНО
+        if (key === correct) {
             solvedNums.push(selectedNum);
             cells.forEach(c => {
                 c.querySelector('.letter-box').innerText = key;
-                c.classList.remove('selected', 'error');
                 c.classList.add('correct');
+                c.classList.remove('selected', 'error');
             });
             checkWin();
         } else {
-            // ОШИБКА
             cells.forEach(c => {
                 c.querySelector('.letter-box').innerText = key;
                 c.classList.add('error');
-                // Очистка через полсекунды, чтобы игрок увидел, что ввел
-                setTimeout(() => {
-                    if (!solvedNums.includes(selectedNum)) {
-                        c.querySelector('.letter-box').innerText = '';
-                        c.classList.remove('error');
-                    }
-                }, 500);
+                setTimeout(() => { if(!solvedNums.includes(selectedNum)) c.querySelector('.letter-box').innerText = ''; c.classList.remove('error'); }, 500);
             });
-            if (navigator.vibrate) navigator.vibrate(50);
         }
     }
 
     function checkWin() {
-        const isWon = [...currentPhrase.replace(/\s/g, '')].every(c => 
-            solvedNums.includes(mapping[c])
-        );
-        if (isWon) {
-            setTimeout(() => {
-                document.getElementById('phrase-res').innerText = `"${currentPhrase}"`;
-                document.getElementById('win-screen').style.display = 'flex';
-            }, 600);
+        const won = [...phrase.replace(/\s/g, '')].every(c => solvedNums.includes(charMap[c]));
+        if (won) {
+            document.getElementById('phrase-out').innerText = phrase;
+            document.getElementById('win-modal').style.display = 'flex';
+            saveData(); // Сохраняем прогресс через SDK
         }
+    }
+
+    function nextLevel() {
+        // Показ межстраничной рекламы между уровнями
+        sdk.adv.showFullscreenAdv({
+            callbacks: {
+                onClose: () => {
+                    document.getElementById('win-modal').style.display = 'none';
+                    startLevel();
+                }
+            }
+        });
+    }
+
+    // РЕКЛАМА ЗА ВОЗНАГРАЖДЕНИЕ (Подсказка)
+    function showRewardedHint() {
+        sdk.adv.showRewardedVideo({
+            callbacks: {
+                onOpen: () => console.log('Video opened'),
+                onRewarded: () => {
+                    // Даем подсказку: находим неразгаданное число
+                    const remaining = Object.keys(numMap).filter(n => !solvedNums.includes(parseInt(n)));
+                    if (remaining.length > 0) {
+                        const target = parseInt(remaining[0]);
+                        selectedNum = target;
+                        handleInput(numMap[target]);
+                    }
+                },
+                onClose: () => console.log('Video closed'),
+                onError: (e) => console.log('Error while open video ad:', e)
+            }
+        });
     }
 
     function renderKeyboard() {
         const kbd = document.getElementById('keyboard');
-        const layout = "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ";
         kbd.innerHTML = '';
-        [...layout].forEach(char => {
+        "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ".split('').forEach(l => {
             const k = document.createElement('div');
             k.className = 'key';
-            k.innerText = char;
-            k.onclick = () => handleInput(char);
+            k.innerText = l;
+            k.onclick = () => handleInput(l);
             kbd.appendChild(k);
         });
     }
 
-    init();
-</script>
+    // Работа с данными (Cloud Saves)
+    function saveData() {
+        if (!sdk) return;
+        sdk.getPlayer().then(_player => {
+            _player.setData({ coins: coins });
+        });
+    }
 
+    function loadData() {
+        coins = 100; // По умолчанию
+        document.getElementById('coins').innerText = `🪙 ${coins}`;
+    }
+
+</script>
 </body>
 </html>
