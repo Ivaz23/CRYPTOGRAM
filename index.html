@@ -4,55 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Криптограмма: Буквы и Цифры</title>
-    <!-- Подключаем SDK Яндекс Игр -->
+    <!-- SDK Яндекс Игр -->
     <script src="https://yandex.ru/games/sdk/v2"></script>
     <style>
         :root {
-            --bg: #f4f6f9;
+            --bg: #eff2f5;
             --card: #ffffff;
             --primary: #4a90e2;
             --correct: #2ecc71;
             --error: #e74c3c;
             --text: #2c3e50;
+            --border: #d1d5db;
         }
 
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: var(--bg);
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
             color: var(--text);
             margin: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            user-select: none;
         }
 
-        /* Верхняя панель */
+        /* ШАПКА */
         header {
-            background: #fff;
-            padding: 10px 20px;
+            height: 60px;
+            background: var(--card);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            z-index: 10;
         }
 
-        .balance { font-weight: bold; color: #f39c12; font-size: 1.2rem; }
-        
+        .logo { font-weight: 900; letter-spacing: 1px; font-size: 1.1rem; }
+        .coins { font-weight: bold; color: #f39c12; font-size: 1.2rem; }
+
         .hint-btn {
             background: #9b59b6;
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 8px 16px;
             border-radius: 20px;
-            cursor: pointer;
             font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
         }
+        .hint-btn:active { transform: scale(0.95); }
 
-        /* Игровое поле (Адаптация под Альбомную ориентацию) */
-        #game-area {
+        /* ИГРОВАЯ ЗОНА (Адаптирована под Альбомную ориентацию) */
+        main {
             flex: 1;
             display: flex;
+            flex-direction: row; /* Клавиатура сбоку для широких экранов */
             padding: 20px;
             gap: 20px;
             overflow: hidden;
@@ -62,22 +72,23 @@
             flex: 2;
             display: flex;
             flex-wrap: wrap;
-            align-content: flex-start;
             justify-content: center;
-            gap: 15px;
+            align-content: flex-start;
             overflow-y: auto;
-            padding-right: 10px;
+            gap: 10px;
+            padding: 10px;
         }
 
+        /* СТИЛЬ СЛОВА (Чтобы не было слитно) */
         .word {
             display: flex;
             gap: 5px;
-            margin-right: 25px; /* Разделение слов */
-            margin-bottom: 20px;
+            margin-right: 30px; /* Отступ между словами */
+            margin-bottom: 25px; /* Отступ между строками */
         }
 
         .cell {
-            width: 45px;
+            width: 44px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -86,158 +97,206 @@
 
         .letter-box {
             width: 100%;
-            height: 50px;
-            background: white;
-            border: 2px solid #bdc3c7;
+            height: 48px;
+            background: var(--card);
+            border: 2px solid var(--border);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+            font-size: 1.7rem;
             font-weight: bold;
-            box-shadow: 0 2px 0 #ddd;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.05);
+            transition: all 0.1s ease;
         }
 
-        .num-label { margin-top: 5px; font-size: 0.8rem; color: #7f8c8d; font-weight: bold; }
+        .num-label {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #95a5a6;
+        }
 
-        /* Интерактив */
-        .cell.selected .letter-box { border-color: var(--primary); background: #ebf5fb; transform: scale(1.05); }
-        .cell.correct .letter-box { color: var(--correct); border-color: var(--correct); background: #f0fff4; }
-        .cell.error .letter-box { color: var(--error); border-color: var(--error); animation: shake 0.3s; }
+        /* СОСТОЯНИЯ */
+        .cell.selected .letter-box {
+            border-color: var(--primary);
+            background: #eef7ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 rgba(74, 144, 226, 0.3);
+        }
+
+        .cell.correct .letter-box {
+            color: var(--correct);
+            border-color: var(--correct);
+            background: #f0fff4;
+        }
+
+        .cell.error .letter-box {
+            color: var(--error);
+            border-color: var(--error);
+            animation: shake 0.4s ease;
+        }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-4px); }
-            75% { transform: translateX(4px); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
         }
 
-        /* Клавиатура (справа в альбомной ориентации) */
+        /* КЛАВИАТУРА (Справа) */
         #keyboard {
             flex: 1;
-            max-width: 350px;
+            max-width: 380px;
+            background: #d1d5db;
+            padding: 12px;
+            border-radius: 15px;
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
-            background: #d1d5db;
-            padding: 10px;
-            border-radius: 12px;
+            gap: 6px;
             align-content: center;
         }
 
         .key {
-            background: white;
-            height: 50px;
-            border-radius: 6px;
+            background: #fff;
+            height: 52px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 0 #9ca3af;
             cursor: pointer;
-            box-shadow: 0 2px 0 #999;
         }
 
         .key:active { transform: translateY(2px); box-shadow: none; }
 
-        /* Окно победы */
+        /* ОКНО ПОБЕДЫ */
         #win-modal {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             z-index: 100;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
+            text-align: center;
         }
 
-        .next-lvl {
+        .btn-next {
             background: var(--correct);
-            padding: 15px 40px;
-            border: none;
             color: white;
+            border: none;
+            padding: 15px 45px;
             border-radius: 30px;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: bold;
+            margin-top: 25px;
             cursor: pointer;
-            margin-top: 20px;
+        }
+
+        /* Адаптация под вертикальный экран, если пользователь повернет телефон */
+        @media (max-width: 600px) {
+            main { flex-direction: column; }
+            #keyboard { max-width: 100%; grid-template-columns: repeat(11, 1fr); }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="balance" id="coins">🪙 100</div>
-    <div style="font-weight: 900; letter-spacing: 2px;">КРИПТОГРАММА</div>
-    <button class="hint-btn" onclick="showRewardedHint()">💡 ПОДСКАЗКА (AD)</button>
+    <div class="logo">КРИПТОГРАММА</div>
+    <div class="coins" id="coin-count">🪙 100</div>
+    <button class="hint-btn" onclick="rewardedHint()">💡 ПОДСКАЗКА</button>
 </header>
 
-<main id="game-area">
+<main>
     <div id="puzzle-container"></div>
     <div id="keyboard"></div>
 </main>
 
 <div id="win-modal">
-    <h1 style="font-size: 4rem;">🎉</h1>
-    <h2>УРОВЕНЬ ПРОЙДЕН!</h2>
-    <p id="phrase-out" style="font-style: italic; opacity: 0.8;"></p>
-    <button class="next-lvl" onclick="nextLevel()">СЛЕДУЮЩИЙ УРОВЕНЬ</button>
+    <div style="font-size: 5rem">🏆</div>
+    <h2 style="font-size: 2rem">ОТЛИЧНО!</h2>
+    <p id="phrase-display" style="font-style: italic; font-size: 1.2rem; padding: 0 20px;"></p>
+    <button class="btn-next" onclick="nextLevel()">СЛЕДУЮЩАЯ ФРАЗА</button>
 </div>
 
 <script>
-    let sdk, phrase, charMap, numMap, solvedNums, coins, selectedNum;
+    let sdk, phrase, charMap, numMap, solvedNums, selectedNum;
+    let coins = 100;
 
-    // 1. Инициализация SDK
-    YaGames.init().then(ysdk => {
-        sdk = ysdk;
-        console.log("Yandex SDK initialized");
-        loadData(); // Загружаем сохранения (монеты, уровень)
-        startLevel();
-        
-        // Показ первой рекламы при входе
-        sdk.adv.showFullscreenAdv();
-    });
+    // 1. Инициализация Яндекс SDK
+    if (typeof YaGames !== 'undefined') {
+        YaGames.init().then(ysdk => {
+            sdk = ysdk;
+            sdk.adv.showFullscreenAdv(); // Реклама при загрузке
+            startNewGame();
+        });
+    } else {
+        // Запуск локально (для тестов)
+        startNewGame();
+    }
 
-    const phrases = [
-        "ЗНАНИЕ ЭТО СИЛА", "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ", 
-        "СЕМЬ РАЗ ОТМЕРЬ ОДИН ОТРЕЖЬ", "ВЕК ЖИВИ ВЕК УЧИСЬ"
+    const phraseBank = [
+        "ЗНАНИЕ ЭТО СИЛА",
+        "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ",
+        "СЕМЬ РАЗ ОТМЕРЬ ОДИН ОТРЕЖЬ",
+        "ВЕК ЖИВИ ВЕК УЧИСЬ",
+        "ДВИЖЕНИЕ ЭТО ЖИЗНЬ",
+        "КРАСОТА СПАСЕТ МИР",
+        "ОДИН В ПОЛЕ НЕ ВОИН",
+        "ДЕЛО МАСТЕРА БОИТСЯ"
     ];
 
-    function startLevel() {
-        phrase = phrases[Math.floor(Math.random() * phrases.length)];
-        charMap = {}; numMap = {}; solvedNums = [];
-        
-        const letters = [...new Set(phrase.replace(/\s/g, '').split(''))];
-        const nums = Array.from({length: 33}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+    function startNewGame() {
+        phrase = phraseBank[Math.floor(Math.random() * phraseBank.length)];
+        charMap = {}; 
+        numMap = {}; 
+        solvedNums = [];
+        selectedNum = null;
 
-        letters.forEach((l, i) => {
-            charMap[l] = nums[i];
-            numMap[nums[i]] = l;
+        const uniqueLetters = [...new Set(phrase.replace(/\s/g, '').split(''))];
+        const shuffledNums = Array.from({length: 33}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+
+        uniqueLetters.forEach((letter, i) => {
+            charMap[letter] = shuffledNums[i];
+            numMap[shuffledNums[i]] = letter;
         });
 
-        // Даем 3 подсказки в начале
-        letters.sort(() => Math.random() - 0.5).slice(0, 3).forEach(l => solvedNums.push(charMap[l]));
+        // Открываем 3 стартовые буквы как подсказку
+        let startingHints = uniqueLetters.sort(() => Math.random() - 0.5).slice(0, 3);
+        startingHints.forEach(l => solvedNums.push(charMap[l]));
 
         renderBoard();
         renderKeyboard();
     }
 
     function renderBoard() {
-        const cont = document.getElementById('puzzle-container');
-        cont.innerHTML = '';
+        const container = document.getElementById('puzzle-container');
+        container.innerHTML = '';
+
         phrase.split(' ').forEach(word => {
             const wordDiv = document.createElement('div');
             wordDiv.className = 'word';
+            
             [...word].forEach(char => {
                 const n = charMap[char];
+                const isSolved = solvedNums.includes(n);
                 const cell = document.createElement('div');
-                cell.className = `cell num-${n} ${solvedNums.includes(n) ? 'correct' : ''}`;
-                cell.innerHTML = `<div class="letter-box">${solvedNums.includes(n) ? char : ''}</div>
-                                  <div class="num-label">${n}</div>`;
+                cell.className = `cell num-${n} ${isSolved ? 'correct' : ''}`;
+                
+                cell.innerHTML = `
+                    <div class="letter-box">${isSolved ? char : ''}</div>
+                    <div class="num-label">${n}</div>
+                `;
+                
                 cell.onclick = () => selectCell(n);
                 wordDiv.appendChild(cell);
             });
-            cont.appendChild(wordDiv);
+            container.appendChild(wordDiv);
         });
     }
 
@@ -249,93 +308,98 @@
     }
 
     function handleInput(key) {
-        if (!selectedNum) return;
-        const correct = numMap[selectedNum];
+        if (!selectedNum || solvedNums.includes(selectedNum)) return;
+
+        const correctChar = numMap[selectedNum];
         const cells = document.querySelectorAll(`.num-${selectedNum}`);
 
-        if (key === correct) {
+        if (key === correctChar) {
+            // ВЕРНО
             solvedNums.push(selectedNum);
             cells.forEach(c => {
                 c.querySelector('.letter-box').innerText = key;
                 c.classList.add('correct');
                 c.classList.remove('selected', 'error');
             });
+            selectedNum = null;
             checkWin();
         } else {
+            // ОШИБКА
             cells.forEach(c => {
                 c.querySelector('.letter-box').innerText = key;
                 c.classList.add('error');
-                setTimeout(() => { if(!solvedNums.includes(selectedNum)) c.querySelector('.letter-box').innerText = ''; c.classList.remove('error'); }, 500);
+                setTimeout(() => {
+                    if (!solvedNums.includes(selectedNum)) {
+                        c.querySelector('.letter-box').innerText = '';
+                        c.classList.remove('error');
+                    }
+                }, 400);
             });
+            if (navigator.vibrate) navigator.vibrate(50);
         }
     }
 
     function checkWin() {
-        const won = [...phrase.replace(/\s/g, '')].every(c => solvedNums.includes(charMap[c]));
-        if (won) {
-            document.getElementById('phrase-out').innerText = phrase;
-            document.getElementById('win-modal').style.display = 'flex';
-            saveData(); // Сохраняем прогресс через SDK
+        const lettersOnly = phrase.replace(/\s/g, '');
+        const isWon = [...lettersOnly].every(l => solvedNums.includes(charMap[l]));
+        
+        if (isWon) {
+            setTimeout(() => {
+                document.getElementById('phrase-display').innerText = `"${phrase}"`;
+                document.getElementById('win-modal').style.display = 'flex';
+            }, 600);
         }
     }
 
     function nextLevel() {
-        // Показ межстраничной рекламы между уровнями
-        sdk.adv.showFullscreenAdv({
-            callbacks: {
-                onClose: () => {
-                    document.getElementById('win-modal').style.display = 'none';
-                    startLevel();
+        document.getElementById('win-modal').style.display = 'none';
+        if (sdk) {
+            sdk.adv.showFullscreenAdv({
+                callbacks: {
+                    onClose: () => startNewGame(),
+                    onError: () => startNewGame()
                 }
-            }
-        });
+            });
+        } else {
+            startNewGame();
+        }
     }
 
-    // РЕКЛАМА ЗА ВОЗНАГРАЖДЕНИЕ (Подсказка)
-    function showRewardedHint() {
-        sdk.adv.showRewardedVideo({
-            callbacks: {
-                onOpen: () => console.log('Video opened'),
-                onRewarded: () => {
-                    // Даем подсказку: находим неразгаданное число
-                    const remaining = Object.keys(numMap).filter(n => !solvedNums.includes(parseInt(n)));
-                    if (remaining.length > 0) {
-                        const target = parseInt(remaining[0]);
-                        selectedNum = target;
-                        handleInput(numMap[target]);
-                    }
-                },
-                onClose: () => console.log('Video closed'),
-                onError: (e) => console.log('Error while open video ad:', e)
-            }
-        });
+    function rewardedHint() {
+        if (sdk) {
+            sdk.adv.showRewardedVideo({
+                callbacks: {
+                    onRewarded: () => giveFreeHint(),
+                    onError: () => alert("Реклама не загружена")
+                }
+            });
+        } else {
+            giveFreeHint(); // Для локального теста
+        }
+    }
+
+    function giveFreeHint() {
+        const remainingNums = Object.keys(numMap).map(Number).filter(n => !solvedNums.includes(n));
+        if (remainingNums.length > 0) {
+            const hintNum = remainingNums[Math.floor(Math.random() * remainingNums.length)];
+            selectedNum = hintNum;
+            handleInput(numMap[hintNum]);
+        }
     }
 
     function renderKeyboard() {
         const kbd = document.getElementById('keyboard');
+        const layout = "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ";
         kbd.innerHTML = '';
-        "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ".split('').forEach(l => {
-            const k = document.createElement('div');
-            k.className = 'key';
-            k.innerText = l;
-            k.onclick = () => handleInput(l);
-            kbd.appendChild(k);
+        layout.split('').forEach(l => {
+            const key = document.createElement('div');
+            key.className = 'key';
+            key.innerText = l;
+            key.onclick = () => handleInput(l);
+            kbd.appendChild(key);
         });
     }
-
-    // Работа с данными (Cloud Saves)
-    function saveData() {
-        if (!sdk) return;
-        sdk.getPlayer().then(_player => {
-            _player.setData({ coins: coins });
-        });
-    }
-
-    function loadData() {
-        coins = 100; // По умолчанию
-        document.getElementById('coins').innerText = `🪙 ${coins}`;
-    }
-
 </script>
+
 </body>
 </html>
