@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cryptogram Mobile</title>
+    <style>
+        :root {
+            --bg: #fdfdfd;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --primary: #3498db;
+            --correct: #2ecc71;
+            --error: #e74c3c;
+            --border: #dcdde1;
+            --cell-size: 42px;
+            --word-spacing: 20px; /* Тот самый отступ между словами */
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-weight: 800;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+
+        /* Игровое поле */
+        #game-board {
+            flex: 1;
+            padding: 25px 15px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: flex-start;
+            overflow-y: auto;
+            gap: 10px; /* Расстояние между ячейками */
+        }
+
+        /* Контейнер для слова — чтобы буквы внутри слова не разрывались */
+        .word {
+            display: flex;
+            gap: 4px;
+            margin-right: var(--word-spacing); /* Отступ между словами */
+            margin-bottom: 25px; /* Отступ между строками */
+        }
+
+        .cell {
+            width: var(--cell-size);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .letter-box {
+            width: 100%;
+            height: 46px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 0 #eee;
+        }
+
+        .num-label {
+            margin-top: 5px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #95a5a6;
+        }
+
+        /* Состояния ячеек */
+        .cell.selected .letter-box {
+            border-color: var(--primary);
+            background: #ebf5fb;
+            transform: scale(1.05);
+        }
+
+        .cell.correct .letter-box {
+            background: #f0fff4;
+            border-color: var(--correct);
+            color: var(--correct);
+        }
+
+        .cell.error .letter-box {
+            border-color: var(--error);
+            color: var(--error);
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        /* Клавиатура */
+        #keyboard {
+            background: #d1d5db;
+            padding: 8px 4px env(safe-area-inset-bottom, 8px);
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            gap: 4px;
+        }
+
+        .key {
+            background: #fff;
+            height: 48px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .key:active { background: #adb5bd; }
+
+        /* Модалка победы */
+        #win-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 12px 35px;
+            background: var(--correct);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<header>КРИПТОГРАММА</header>
+
+<div id="game-board"></div>
+
+<div id="keyboard"></div>
+
+<div id="win-screen">
+    <h1 style="font-size: 4rem; margin: 0;">⭐️</h1>
+    <h2>Уровень пройден!</h2>
+    <p id="phrase-res" style="padding: 0 30px; font-style: italic;"></p>
+    <button class="btn" onclick="location.reload()">ДАЛЕЕ</button>
+</div>
+
+<script>
+    const phrases = [
+        "ЗНАНИЕ ЭТО СИЛА",
+        "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ",
+        "СЕМЬ РАЗ ОТМЕРЬ ОДИН ОТРЕЖЬ",
+        "ВЕК ЖИВИ ВЕК УЧИСЬ",
+        "ДВИЖЕНИЕ ЭТО ЖИЗНЬ"
+    ];
+
+    let currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+    let mapping = {};      // Буква -> Число
+    let revMapping = {};   // Число -> Буква
+    let solvedNums = [];   // Список уже угаданных чисел
+    let selectedNum = null;
+
+    function init() {
+        const letters = [...new Set(currentPhrase.replace(/\s/g, '').split(''))];
+        const nums = Array.from({length: 33}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+
+        letters.forEach((char, i) => {
+            mapping[char] = nums[i];
+            revMapping[nums[i]] = char;
+        });
+
+        // Открываем 3 буквы как подсказки
+        const hints = letters.sort(() => Math.random() - 0.5).slice(0, 3);
+        hints.forEach(l => solvedNums.push(mapping[l]));
+
+        renderBoard();
+        renderKeyboard();
+    }
+
+    function renderBoard() {
+        const board = document.getElementById('game-board');
+        board.innerHTML = '';
+
+        currentPhrase.split(' ').forEach(word => {
+            const wordDiv = document.createElement('div');
+            wordDiv.className = 'word';
+            
+            [...word].forEach(char => {
+                const num = mapping[char];
+                const cell = document.createElement('div');
+                cell.className = `cell num-${num}`;
+                if (solvedNums.includes(num)) cell.classList.add('correct');
+                
+                cell.innerHTML = `
+                    <div class="letter-box">${solvedNums.includes(num) ? char : ''}</div>
+                    <div class="num-label">${num}</div>
+                `;
+                
+                cell.onclick = () => selectCell(num);
+                wordDiv.appendChild(cell);
+            });
+            board.appendChild(wordDiv);
+        });
+    }
+
+    function selectCell(num) {
+        if (solvedNums.includes(num)) return;
+        selectedNum = num;
+        
+        document.querySelectorAll('.cell').forEach(c => {
+            c.classList.remove('selected');
+            if (c.classList.contains(`num-${num}`)) c.classList.add('selected');
+        });
+    }
+
+    function handleInput(key) {
+        if (!selectedNum || solvedNums.includes(selectedNum)) return;
+
+        const correctChar = revMapping[selectedNum];
+        const cells = document.querySelectorAll(`.num-${selectedNum}`);
+
+        if (key === correctChar) {
+            // ПРАВИЛЬНО
+            solvedNums.push(selectedNum);
+            cells.forEach(c => {
+                c.querySelector('.letter-box').innerText = key;
+                c.classList.remove('selected', 'error');
+                c.classList.add('correct');
+            });
+            checkWin();
+        } else {
+            // ОШИБКА
+            cells.forEach(c => {
+                c.querySelector('.letter-box').innerText = key;
+                c.classList.add('error');
+                // Очистка через полсекунды, чтобы игрок увидел, что ввел
+                setTimeout(() => {
+                    if (!solvedNums.includes(selectedNum)) {
+                        c.querySelector('.letter-box').innerText = '';
+                        c.classList.remove('error');
+                    }
+                }, 500);
+            });
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+    }
+
+    function checkWin() {
+        const isWon = [...currentPhrase.replace(/\s/g, '')].every(c => 
+            solvedNums.includes(mapping[c])
+        );
+        if (isWon) {
+            setTimeout(() => {
+                document.getElementById('phrase-res').innerText = `"${currentPhrase}"`;
+                document.getElementById('win-screen').style.display = 'flex';
+            }, 600);
+        }
+    }
+
+    function renderKeyboard() {
+        const kbd = document.getElementById('keyboard');
+        const layout = "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ";
+        kbd.innerHTML = '';
+        [...layout].forEach(char => {
+            const k = document.createElement('div');
+            k.className = 'key';
+            k.innerText = char;
+            k.onclick = () => handleInput(char);
+            kbd.appendChild(k);
+        });
+    }
+
+    init();
+</script>
+
+</body>
+</html>
