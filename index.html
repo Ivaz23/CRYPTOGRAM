@@ -18,7 +18,7 @@
             --hint-color: #9b59b6;
         }
 
-        /* ПУНКТ 1.6.2.7 - Запрет выделения и контекстного меню */
+        /* ПУНКТ 1.6.2.7 - Запрет выделения и меню */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent;
@@ -41,17 +41,23 @@
             overflow: hidden;
         }
 
+        /* ШАПКА */
         header {
             height: 50px;
             background: var(--card);
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
+            padding: 0 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             flex-shrink: 0;
         }
 
-        .logo { font-weight: 900; letter-spacing: 1px; font-size: 1.2rem; text-transform: uppercase; }
+        .logo { font-weight: 900; letter-spacing: 1px; font-size: 1rem; text-transform: uppercase; }
+        .pause-btn { 
+            background: #eee; border: none; padding: 5px 12px; border-radius: 8px; 
+            cursor: pointer; font-size: 1.2rem; 
+        }
 
         main {
             flex: 1;
@@ -59,6 +65,7 @@
             flex-direction: column;
             overflow: hidden;
             padding: 10px;
+            position: relative;
         }
 
         /* ИГРОВОЕ ПОЛЕ */
@@ -109,7 +116,7 @@
             75% { transform: translateX(4px); }
         }
 
-        /* КЛАВИАТУРА ЙЦУКЕН */
+        /* КЛАВИАТУРА */
         #keyboard-wrapper {
             background: #d1d5db;
             padding: 8px 4px;
@@ -146,7 +153,7 @@
 
         .key:active { transform: translateY(1px); box-shadow: none; background: #e2e8f0; }
 
-        /* ПОДСКАЗКИ (ПУНКТ 4.5.1 - Четкое указание рекламы) */
+        /* ПОДСКАЗКИ */
         .hints-bar {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -167,33 +174,39 @@
         .hint-btn div { font-size: 11px; text-transform: uppercase; }
         .hint-btn span { font-size: 9px; opacity: 0.9; display: block; margin-top: 2px; }
 
-        /* ОКНО ПОБЕДЫ */
-        #win-modal {
-            display: none;
+        /* ЭКРАНЫ (МЕНЮ, ПАУЗА, ПОБЕДА) */
+        .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 100;
+            background: rgba(0,0,0,0.9);
+            z-index: 200;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            padding: 30px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(5px);
         }
 
-        .btn-next {
-            background: var(--correct);
+        .menu-logo { font-size: 2.5rem; font-weight: 900; margin-bottom: 30px; color: var(--primary); }
+
+        .btn-ui {
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 30px;
-            font-size: 1.2rem;
-            margin-top: 25px;
-            cursor: pointer;
+            padding: 15px 50px;
+            border-radius: 35px;
+            font-size: 1.3rem;
             font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+            min-width: 220px;
         }
 
-        /* Адаптация для десктопа (горизонтальная ориентация) */
+        .btn-secondary { background: #555; font-size: 1rem; padding: 10px 30px; }
+
         @media (orientation: landscape) and (min-width: 700px) {
             main { flex-direction: row; }
             #keyboard-wrapper { width: 380px; border-radius: 12px; margin: auto 10px; }
@@ -201,10 +214,33 @@
         }
     </style>
 </head>
-<body oncontextmenu="return false;"> <!-- ПУНКТ 1.6.2.7 -->
+<body oncontextmenu="return false;">
 
+<!-- ГЛАВНОЕ МЕНЮ -->
+<div id="menu-screen" class="overlay" style="display: flex;">
+    <div class="menu-logo">КРИПТОГРАММА</div>
+    <button class="btn-ui" onclick="startGame()" id="ui-play">ИГРАТЬ</button>
+</div>
+
+<!-- ЭКРАН ПАУЗЫ -->
+<div id="pause-screen" class="overlay">
+    <h2 style="font-size: 2.5rem;" id="ui-pause-title">ПАУЗА</h2>
+    <button class="btn-ui" onclick="togglePause()" id="ui-resume">ПРОДОЛЖИТЬ</button>
+    <button class="btn-ui btn-secondary" onclick="location.reload()" id="ui-to-menu">В МЕНЮ</button>
+</div>
+
+<!-- ЭКРАН ПОБЕДЫ -->
+<div id="win-screen" class="overlay">
+    <div style="font-size: 4rem; margin-bottom: 20px;">🏆</div>
+    <h2 id="ui-win-title">ГОТОВО!</h2>
+    <p id="phrase-display" style="font-style: italic; color: #bdc3c7; font-size: 1.2rem; margin-bottom: 30px;"></p>
+    <button class="btn-ui" onclick="nextLevel()" id="ui-next-btn">ДАЛЕЕ</button>
+</div>
+
+<!-- ИГРОВОЙ ИНТЕРФЕЙС -->
 <header>
     <div class="logo" id="ui-logo">КРИПТОГРАММА</div>
+    <button class="pause-btn" onclick="togglePause()">⏸</button>
 </header>
 
 <main>
@@ -225,56 +261,65 @@
     </div>
 </main>
 
-<div id="win-modal">
-    <div style="font-size: 4rem; margin-bottom: 20px;">🏆</div>
-    <h2 id="ui-win-title">ГОТОВО!</h2>
-    <p id="phrase-display" style="font-style: italic; color: #bdc3c7; font-size: 1.2rem; text-align: center;"></p>
-    <button class="btn-next" onclick="nextLevel()" id="ui-next-btn">ДАЛЕЕ</button>
-</div>
-
 <script>
     let sdk, phrase, charMap, numMap, solvedNums, selectedNum;
     let lang = 'ru';
+    let isPaused = false;
 
     const translations = {
         ru: {
             logo: "КРИПТОГРАММА",
+            play: "ИГРАТЬ",
+            resume: "ПРОДОЛЖИТЬ",
+            pause: "ПАУЗА",
+            toMenu: "В МЕНЮ",
             hint1: "ОТКРЫТЬ БУКВУ",
             hint2: "СЛУЧАЙНАЯ БУКВА",
             ads: "СМОТРЕТЬ РЕКЛАМУ",
             win: "ОТЛИЧНО!",
             next: "ДАЛЕЕ",
             kbdRows: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЁ"],
-            phrases: ["ЗНАНИЕ ЭТО СИЛА", "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ", "СЕМЬ РАЗ ОТМЕРЬ", "ДЕЛО МАСТЕРА БОИТСЯ", "ВЕК ЖИВИ ВЕК УЧИСЬ", "УЧЕНЬЕ СВЕТ А НЕУЧЕНЬЕ ТЬМА"]
+            phrases: ["ЗНАНИЕ ЭТО СИЛА", "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ", "СЕМЬ РАЗ ОТМЕРЬ", "ДЕЛО МАСТЕРА БОИТСЯ", "ВЕК ЖИВИ ВЕК УЧИСЬ"]
         },
         en: {
             logo: "CRYPTOGRAM",
+            play: "PLAY",
+            resume: "RESUME",
+            pause: "PAUSE",
+            toMenu: "MAIN MENU",
             hint1: "OPEN LETTER",
             hint2: "RANDOM LETTER",
             ads: "WATCH AD",
             win: "WELL DONE!",
             next: "NEXT",
             kbdRows: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"],
-            phrases: ["KNOWLEDGE IS POWER", "TIME IS MONEY", "PRACTICE MAKES PERFECT", "STAY POSITIVE", "NEVER GIVE UP", "LIFE IS BEAUTIFUL"]
+            phrases: ["KNOWLEDGE IS POWER", "TIME IS MONEY", "PRACTICE MAKES PERFECT", "STAY POSITIVE", "NEVER GIVE UP"]
         }
     };
 
-    // 1. Инициализация SDK (ПУНКТ 2.14 - Автоопределение языка)
+    // 1. Инициализация SDK
     if (typeof YaGames !== 'undefined') {
         YaGames.init().then(ysdk => {
             sdk = ysdk;
             lang = sdk.environment.i18n.lang || 'ru';
             if (lang !== 'ru' && lang !== 'en') lang = 'en';
             applyLocalization();
-            startNewGame();
+            // Game Ready API (Вызываем когда меню готово)
+            if (sdk.features && sdk.features.LoadingAPI) {
+                sdk.features.LoadingAPI.ready();
+            }
         });
     } else {
-        startNewGame();
+        applyLocalization();
     }
 
     function applyLocalization() {
         const t = translations[lang];
-        document.getElementById('ui-logo').innerText = t.logo;
+        document.querySelectorAll('.logo, .menu-logo').forEach(el => el.innerText = t.logo);
+        document.getElementById('ui-play').innerText = t.play;
+        document.getElementById('ui-resume').innerText = t.resume;
+        document.getElementById('ui-pause-title').innerText = t.pause;
+        document.getElementById('ui-to-menu').innerText = t.toMenu;
         document.getElementById('ui-hint-1').innerText = t.hint1;
         document.getElementById('ui-hint-2').innerText = t.hint2;
         document.getElementById('ui-ads-1').innerText = t.ads;
@@ -283,7 +328,17 @@
         document.getElementById('ui-next-btn').innerText = t.next;
     }
 
-    function startNewGame() {
+    function startGame() {
+        document.getElementById('menu-screen').style.display = 'none';
+        startNewLevel();
+    }
+
+    function togglePause() {
+        isPaused = !isPaused;
+        document.getElementById('pause-screen').style.display = isPaused ? 'flex' : 'none';
+    }
+
+    function startNewLevel() {
         const t = translations[lang];
         phrase = t.phrases[Math.floor(Math.random() * t.phrases.length)];
         charMap = {}; numMap = {}; solvedNums = []; selectedNum = null;
@@ -297,17 +352,11 @@
             numMap[shuffledNums[i]] = letter;
         });
 
-        // ОТКРЫВАЕМ 3 БУКВЫ СРАЗУ
-        const initialOpen = uniqueLetters.sort(() => Math.random() - 0.5).slice(0, 3);
-        initialOpen.forEach(l => solvedNums.push(charMap[l]));
+        // Открываем 3 буквы
+        uniqueLetters.sort(() => Math.random() - 0.5).slice(0, 3).forEach(l => solvedNums.push(charMap[l]));
 
         renderBoard();
         renderKeyboard();
-
-        // Game Ready API (согласно замечанию)
-        if (sdk && sdk.features && sdk.features.LoadingAPI) {
-            sdk.features.LoadingAPI.ready();
-        }
     }
 
     function renderBoard() {
@@ -335,7 +384,6 @@
     function renderKeyboard() {
         const kbdContainer = document.getElementById('keyboard-content');
         kbdContainer.innerHTML = '';
-        
         translations[lang].kbdRows.forEach(rowString => {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'kbd-row';
@@ -351,14 +399,14 @@
     }
 
     function selectCell(n) {
-        if (solvedNums.includes(n)) return;
+        if (isPaused || solvedNums.includes(n)) return;
         selectedNum = n;
         document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
         document.querySelectorAll(`.num-${n}`).forEach(c => c.classList.add('selected'));
     }
 
     function handleInput(key) {
-        if (!selectedNum) return;
+        if (isPaused || !selectedNum) return;
         const correctChar = numMap[selectedNum];
         const cells = document.querySelectorAll(`.num-${selectedNum}`);
 
@@ -380,24 +428,20 @@
     }
 
     function showHint(type) {
+        if (isPaused) return;
         if (!sdk) { executeHint(type); return; }
         sdk.adv.showRewardedVideo({
             callbacks: {
-                onRewarded: () => executeHint(type),
-                onError: (e) => console.log('Adv error:', e)
+                onRewarded: () => executeHint(type)
             }
         });
     }
 
     function executeHint(type) {
-        let nToOpen = null;
-        if (type === 'letter' && selectedNum) {
-            nToOpen = selectedNum;
-        } else {
+        let nToOpen = (type === 'letter' && selectedNum) ? selectedNum : null;
+        if (!nToOpen) {
             const remaining = Object.keys(numMap).map(Number).filter(n => !solvedNums.includes(n));
-            if (remaining.length > 0) {
-                nToOpen = remaining[Math.floor(Math.random() * remaining.length)];
-            }
+            if (remaining.length > 0) nToOpen = remaining[Math.floor(Math.random() * remaining.length)];
         }
         if (nToOpen) {
             selectedNum = nToOpen;
@@ -411,17 +455,17 @@
         if (isWon) {
             setTimeout(() => {
                 document.getElementById('phrase-display').innerText = `"${phrase}"`;
-                document.getElementById('win-modal').style.display = 'flex';
+                document.getElementById('win-screen').style.display = 'flex';
             }, 600);
         }
     }
 
     function nextLevel() {
-        document.getElementById('win-modal').style.display = 'none';
+        document.getElementById('win-screen').style.display = 'none';
         if (sdk) {
-            sdk.adv.showFullscreenAdv({ callbacks: { onClose: () => startNewGame() } });
+            sdk.adv.showFullscreenAdv({ callbacks: { onClose: () => startNewLevel() } });
         } else {
-            startNewGame();
+            startNewLevel();
         }
     }
 </script>
