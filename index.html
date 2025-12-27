@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Криптограмма: Буквы и Цифры</title>
+    <title>Криптограмма</title>
     <!-- SDK Яндекс Игр -->
     <script src="https://yandex.ru/games/sdk/v2"></script>
     <style>
@@ -15,9 +15,17 @@
             --error: #e74c3c;
             --text: #2c3e50;
             --border: #d1d5db;
+            --hint-color: #9b59b6;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* Блокировка выделения и меню (п. 1.6.2.7) */
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
         body {
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -28,67 +36,44 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
-            user-select: none;
         }
 
-        /* ШАПКА */
         header {
-            height: 60px;
+            height: 50px;
             background: var(--card);
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            padding: 0 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             z-index: 10;
         }
 
-        .logo { font-weight: 900; letter-spacing: 1px; font-size: 1.1rem; }
-        .coins { font-weight: bold; color: #f39c12; font-size: 1.2rem; }
+        .logo { font-weight: 900; letter-spacing: 1px; font-size: 1.2rem; text-transform: uppercase; }
 
-        .hint-btn {
-            background: #9b59b6;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .hint-btn:active { transform: scale(0.95); }
-
-        /* ИГРОВАЯ ЗОНА (Адаптирована под Альбомную ориентацию) */
         main {
             flex: 1;
             display: flex;
-            flex-direction: row; /* Клавиатура сбоку для широких экранов */
-            padding: 20px;
-            gap: 20px;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
             overflow: hidden;
         }
 
         #puzzle-container {
-            flex: 2;
+            flex: 1;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-content: flex-start;
             overflow-y: auto;
-            gap: 10px;
             padding: 10px;
+            gap: 8px;
         }
 
-        /* СТИЛЬ СЛОВА (Чтобы не было слитно) */
-        .word {
-            display: flex;
-            gap: 5px;
-            margin-right: 30px; /* Отступ между словами */
-            margin-bottom: 25px; /* Отступ между строками */
-        }
+        .word { display: flex; gap: 4px; margin-right: 15px; margin-bottom: 20px; }
 
         .cell {
-            width: 44px;
+            width: 36px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -97,206 +82,253 @@
 
         .letter-box {
             width: 100%;
-            height: 48px;
+            height: 40px;
             background: var(--card);
             border: 2px solid var(--border);
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.7rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            box-shadow: 0 2px 0 rgba(0,0,0,0.05);
-            transition: all 0.1s ease;
         }
 
-        .num-label {
-            margin-top: 5px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: #95a5a6;
-        }
+        .num-label { margin-top: 3px; font-size: 0.7rem; color: #95a5a6; font-weight: bold; }
 
-        /* СОСТОЯНИЯ */
-        .cell.selected .letter-box {
-            border-color: var(--primary);
-            background: #eef7ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 0 rgba(74, 144, 226, 0.3);
-        }
-
-        .cell.correct .letter-box {
-            color: var(--correct);
-            border-color: var(--correct);
-            background: #f0fff4;
-        }
-
-        .cell.error .letter-box {
-            color: var(--error);
-            border-color: var(--error);
-            animation: shake 0.4s ease;
-        }
+        .cell.selected .letter-box { border-color: var(--primary); background: #eef7ff; transform: scale(1.05); }
+        .cell.correct .letter-box { color: var(--correct); border-color: var(--correct); background: #f0fff4; }
+        .cell.error .letter-box { color: var(--error); border-color: var(--error); animation: shake 0.3s; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-4px); }
-            40%, 80% { transform: translateX(4px); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
         }
 
-        /* КЛАВИАТУРА (Справа) */
-        #keyboard {
-            flex: 1;
-            max-width: 380px;
+        /* КЛАВИАТУРА */
+        #keyboard-container {
             background: #d1d5db;
-            padding: 12px;
-            border-radius: 15px;
+            padding: 8px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        #keyboard {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 6px;
-            align-content: center;
+            grid-template-columns: repeat(11, 1fr);
+            gap: 4px;
+            margin-bottom: 10px;
         }
 
         .key {
             background: #fff;
-            height: 52px;
-            border-radius: 8px;
+            height: 42px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 2px 0 #9ca3af;
+            font-size: 0.9rem;
             cursor: pointer;
+            box-shadow: 0 1px 0 #9ca3af;
+        }
+        .key:active { transform: translateY(1px); box-shadow: none; }
+
+        /* БЛОК ПОДСКАЗОК (п. 4.5.1) */
+        .hints-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
 
-        .key:active { transform: translateY(2px); box-shadow: none; }
+        .hint-btn {
+            background: var(--hint-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.1;
+        }
+        .hint-btn span { font-size: 8px; opacity: 0.8; text-transform: uppercase; margin-top: 2px; }
 
-        /* ОКНО ПОБЕДЫ */
         #win-modal {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.92);
             z-index: 100;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
             text-align: center;
+            padding: 20px;
         }
 
         .btn-next {
             background: var(--correct);
             color: white;
             border: none;
-            padding: 15px 45px;
+            padding: 15px 40px;
             border-radius: 30px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-top: 25px;
+            font-size: 1.2rem;
+            margin-top: 20px;
             cursor: pointer;
         }
 
-        /* Адаптация под вертикальный экран, если пользователь повернет телефон */
-        @media (max-width: 600px) {
-            main { flex-direction: column; }
-            #keyboard { max-width: 100%; grid-template-columns: repeat(11, 1fr); }
+        @media (orientation: landscape) {
+            main { flex-direction: row; }
+            #keyboard-container { width: 320px; border-radius: 12px; }
+            #keyboard { grid-template-columns: repeat(7, 1fr); }
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
 <header>
-    <div class="logo">КРИПТОГРАММА</div>
-    <div class="coins" id="coin-count">🪙 100</div>
-    <button class="hint-btn" onclick="rewardedHint()">💡 ПОДСКАЗКА</button>
+    <div class="logo" id="ui-logo">КРИПТОГРАММА</div>
 </header>
 
 <main>
     <div id="puzzle-container"></div>
-    <div id="keyboard"></div>
+    
+    <div id="keyboard-container">
+        <div id="keyboard"></div>
+        <div class="hints-bar">
+            <button class="hint-btn" onclick="showHint('letter')">
+                <div id="ui-hint-1">ОТКРЫТЬ БУКВУ</div>
+                <span id="ui-ads-1">СМОТРЕТЬ РЕКЛАМУ</span>
+            </button>
+            <button class="hint-btn" onclick="showHint('random')">
+                <div id="ui-hint-2">СЛУЧАЙНАЯ БУКВА</div>
+                <span id="ui-ads-2">СМОТРЕТЬ РЕКЛАМУ</span>
+            </button>
+        </div>
+    </div>
 </main>
 
 <div id="win-modal">
-    <div style="font-size: 5rem">🏆</div>
-    <h2 style="font-size: 2rem">ОТЛИЧНО!</h2>
-    <p id="phrase-display" style="font-style: italic; font-size: 1.2rem; padding: 0 20px;"></p>
-    <button class="btn-next" onclick="nextLevel()">СЛЕДУЮЩАЯ ФРАЗА</button>
+    <div style="font-size: 3rem; margin-bottom: 10px;">🏆</div>
+    <h2 id="ui-win-title">ОТЛИЧНО!</h2>
+    <p id="phrase-display" style="font-style: italic; font-size: 1.1rem; color: #bdc3c7;"></p>
+    <button class="btn-next" onclick="nextLevel()" id="ui-next-btn">ДАЛЕЕ</button>
 </div>
 
 <script>
     let sdk, phrase, charMap, numMap, solvedNums, selectedNum;
-    let coins = 100;
+    let lang = 'ru';
 
-    // 1. Инициализация Яндекс SDK
+    const translations = {
+        ru: {
+            logo: "КРИПТОГРАММА",
+            hint1: "ОТКРЫТЬ ВЫБРАННУЮ",
+            hint2: "СЛУЧАЙНАЯ БУКВА",
+            ads: "СМОТРЕТЬ РЕКЛАМУ",
+            win: "ФРАЗА РАЗГАДАНА!",
+            next: "СЛЕДУЮЩАЯ",
+            keys: "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ",
+            phrases: ["ЗНАНИЕ ЭТО СИЛА", "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ", "СЕМЬ РАЗ ОТМЕРЬ", "ДЕЛО МАСТЕРА БОИТСЯ", "ВЕК ЖИВИ ВЕК УЧИСЬ"]
+        },
+        en: {
+            logo: "CRYPTOGRAM",
+            hint1: "OPEN SELECTED",
+            hint2: "RANDOM LETTER",
+            ads: "WATCH AD",
+            win: "PUZZLE SOLVED!",
+            next: "NEXT LEVEL",
+            keys: "QWERTYUIOPASDFGHJKLZXCVBNM",
+            phrases: ["KNOWLEDGE IS POWER", "TIME IS MONEY", "PRACTICE MAKES PERFECT", "NEVER GIVE UP", "STAY POSITIVE"]
+        }
+    };
+
+    // 1. Инициализация (п. 2.14 Автоопределение языка)
     if (typeof YaGames !== 'undefined') {
         YaGames.init().then(ysdk => {
             sdk = ysdk;
-            sdk.adv.showFullscreenAdv(); // Реклама при загрузке
+            lang = sdk.environment.i18n.lang || 'ru';
+            if (lang !== 'ru' && lang !== 'en') lang = 'en';
+            applyLocalization();
             startNewGame();
         });
     } else {
-        // Запуск локально (для тестов)
-        startNewGame();
+        startNewGame(); // Локально
     }
 
-    const phraseBank = [
-        "ЗНАНИЕ ЭТО СИЛА",
-        "ТИШЕ ЕДЕШЬ ДАЛЬШЕ БУДЕШЬ",
-        "СЕМЬ РАЗ ОТМЕРЬ ОДИН ОТРЕЖЬ",
-        "ВЕК ЖИВИ ВЕК УЧИСЬ",
-        "ДВИЖЕНИЕ ЭТО ЖИЗНЬ",
-        "КРАСОТА СПАСЕТ МИР",
-        "ОДИН В ПОЛЕ НЕ ВОИН",
-        "ДЕЛО МАСТЕРА БОИТСЯ"
-    ];
+    function applyLocalization() {
+        const t = translations[lang];
+        document.getElementById('ui-logo').innerText = t.logo;
+        document.getElementById('ui-hint-1').innerText = t.hint1;
+        document.getElementById('ui-hint-2').innerText = t.hint2;
+        document.getElementById('ui-ads-1').innerText = t.ads;
+        document.getElementById('ui-ads-2').innerText = t.ads;
+        document.getElementById('ui-win-title').innerText = t.win;
+        document.getElementById('ui-next-btn').innerText = t.next;
+    }
 
     function startNewGame() {
-        phrase = phraseBank[Math.floor(Math.random() * phraseBank.length)];
-        charMap = {}; 
-        numMap = {}; 
-        solvedNums = [];
-        selectedNum = null;
+        const t = translations[lang];
+        phrase = t.phrases[Math.floor(Math.random() * t.phrases.length)];
+        charMap = {}; numMap = {}; solvedNums = []; selectedNum = null;
 
         const uniqueLetters = [...new Set(phrase.replace(/\s/g, '').split(''))];
-        const shuffledNums = Array.from({length: 33}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        const shuffledNums = Array.from({length: 40}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
 
         uniqueLetters.forEach((letter, i) => {
             charMap[letter] = shuffledNums[i];
             numMap[shuffledNums[i]] = letter;
         });
 
-        // Открываем 3 стартовые буквы как подсказку
-        let startingHints = uniqueLetters.sort(() => Math.random() - 0.5).slice(0, 3);
-        startingHints.forEach(l => solvedNums.push(charMap[l]));
+        // ОТКРЫВАЕМ 3 БУКВЫ СРАЗУ (как принято в таких играх)
+        const initialOpenCount = Math.min(3, uniqueLetters.length);
+        const startLetters = uniqueLetters.sort(() => Math.random() - 0.5).slice(0, initialOpenCount);
+        startLetters.forEach(l => solvedNums.push(charMap[l]));
 
         renderBoard();
         renderKeyboard();
+
+        // Game Ready API
+        if (sdk && sdk.features && sdk.features.LoadingAPI) {
+            sdk.features.LoadingAPI.ready();
+        }
     }
 
     function renderBoard() {
         const container = document.getElementById('puzzle-container');
         container.innerHTML = '';
-
         phrase.split(' ').forEach(word => {
             const wordDiv = document.createElement('div');
             wordDiv.className = 'word';
-            
             [...word].forEach(char => {
                 const n = charMap[char];
                 const isSolved = solvedNums.includes(n);
                 const cell = document.createElement('div');
                 cell.className = `cell num-${n} ${isSolved ? 'correct' : ''}`;
-                
                 cell.innerHTML = `
                     <div class="letter-box">${isSolved ? char : ''}</div>
                     <div class="num-label">${n}</div>
                 `;
-                
                 cell.onclick = () => selectCell(n);
                 wordDiv.appendChild(cell);
             });
             container.appendChild(wordDiv);
+        });
+    }
+
+    function renderKeyboard() {
+        const kbd = document.getElementById('keyboard');
+        kbd.innerHTML = '';
+        translations[lang].keys.split('').forEach(l => {
+            const key = document.createElement('div');
+            key.className = 'key';
+            key.innerText = l;
+            key.onclick = () => handleInput(l);
+            kbd.appendChild(key);
         });
     }
 
@@ -308,13 +340,11 @@
     }
 
     function handleInput(key) {
-        if (!selectedNum || solvedNums.includes(selectedNum)) return;
-
+        if (!selectedNum) return;
         const correctChar = numMap[selectedNum];
         const cells = document.querySelectorAll(`.num-${selectedNum}`);
 
         if (key === correctChar) {
-            // ВЕРНО
             solvedNums.push(selectedNum);
             cells.forEach(c => {
                 c.querySelector('.letter-box').innerText = key;
@@ -324,25 +354,49 @@
             selectedNum = null;
             checkWin();
         } else {
-            // ОШИБКА
             cells.forEach(c => {
-                c.querySelector('.letter-box').innerText = key;
                 c.classList.add('error');
-                setTimeout(() => {
-                    if (!solvedNums.includes(selectedNum)) {
-                        c.querySelector('.letter-box').innerText = '';
-                        c.classList.remove('error');
-                    }
-                }, 400);
+                setTimeout(() => c.classList.remove('error'), 300);
             });
-            if (navigator.vibrate) navigator.vibrate(50);
+        }
+    }
+
+    function showHint(type) {
+        if (!sdk) {
+            executeHint(type); // Для тестов без SDK
+            return;
+        }
+
+        sdk.adv.showRewardedVideo({
+            callbacks: {
+                onOpen: () => {},
+                onRewarded: () => executeHint(type),
+                onClose: () => {},
+                onError: (e) => console.log('Adv error:', e)
+            }
+        });
+    }
+
+    function executeHint(type) {
+        let nToOpen = null;
+        if (type === 'letter' && selectedNum) {
+            nToOpen = selectedNum;
+        } else {
+            const remaining = Object.keys(numMap).map(Number).filter(n => !solvedNums.includes(n));
+            if (remaining.length > 0) {
+                nToOpen = remaining[Math.floor(Math.random() * remaining.length)];
+            }
+        }
+
+        if (nToOpen) {
+            selectedNum = nToOpen;
+            handleInput(numMap[nToOpen]);
         }
     }
 
     function checkWin() {
         const lettersOnly = phrase.replace(/\s/g, '');
         const isWon = [...lettersOnly].every(l => solvedNums.includes(charMap[l]));
-        
         if (isWon) {
             setTimeout(() => {
                 document.getElementById('phrase-display').innerText = `"${phrase}"`;
@@ -354,52 +408,11 @@
     function nextLevel() {
         document.getElementById('win-modal').style.display = 'none';
         if (sdk) {
-            sdk.adv.showFullscreenAdv({
-                callbacks: {
-                    onClose: () => startNewGame(),
-                    onError: () => startNewGame()
-                }
-            });
+            sdk.adv.showFullscreenAdv({ callbacks: { onClose: () => startNewGame() } });
         } else {
             startNewGame();
         }
     }
-
-    function rewardedHint() {
-        if (sdk) {
-            sdk.adv.showRewardedVideo({
-                callbacks: {
-                    onRewarded: () => giveFreeHint(),
-                    onError: () => alert("Реклама не загружена")
-                }
-            });
-        } else {
-            giveFreeHint(); // Для локального теста
-        }
-    }
-
-    function giveFreeHint() {
-        const remainingNums = Object.keys(numMap).map(Number).filter(n => !solvedNums.includes(n));
-        if (remainingNums.length > 0) {
-            const hintNum = remainingNums[Math.floor(Math.random() * remainingNums.length)];
-            selectedNum = hintNum;
-            handleInput(numMap[hintNum]);
-        }
-    }
-
-    function renderKeyboard() {
-        const kbd = document.getElementById('keyboard');
-        const layout = "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ";
-        kbd.innerHTML = '';
-        layout.split('').forEach(l => {
-            const key = document.createElement('div');
-            key.className = 'key';
-            key.innerText = l;
-            key.onclick = () => handleInput(l);
-            kbd.appendChild(key);
-        });
-    }
 </script>
-
 </body>
 </html>
