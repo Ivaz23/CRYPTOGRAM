@@ -8,17 +8,17 @@
     <script src="https://yandex.ru/games/sdk/v2"></script>
     <style>
         :root {
-            --bg: #f0f4f8;
-            --card: #ffffff;
-            --primary: #c0392b; /* Праздничный красный */
-            --correct: #27ae60; /* Лесной зеленый */
+            --bg-color: #d6e4f0;
+            --card: rgba(255, 255, 255, 0.9);
+            --primary: #c0392b; 
+            --correct: #27ae60;
             --error: #e67e22;
             --text: #2c3e50;
             --border: #d1d5db;
             --hint-color: #2980b9;
         }
 
-        /* Запрет выделения и меню (п. 1.6.2.7) */
+        /* ПУНКТ 1.6.2.7 - Запрет выделения и меню */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent;
@@ -30,9 +30,6 @@
 
         body {
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            background: radial-gradient(circle at center, #ffffff 0%, #d6e4f0 100%);
-            color: var(--text);
             margin: 0;
             padding: 0;
             display: flex;
@@ -40,6 +37,10 @@
             height: 100vh;
             height: -webkit-fill-available;
             overflow: hidden;
+            color: var(--text);
+            /* ФОН С ЁЛОЧКАМИ (SVG Pattern) */
+            background-color: var(--bg-color);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='100' viewBox='0 0 80 100'%3E%3Cpath d='M40 10 L55 40 L48 40 L62 70 L43 70 L43 85 L37 85 L37 70 L18 70 L32 40 L25 40 Z' fill='%2327ae60' fill-opacity='0.15'/%3E%3C/svg%3E");
         }
 
         /* ЭФФЕКТ СНЕГА */
@@ -53,9 +54,7 @@
             position: absolute;
             top: -10px;
             color: white;
-            font-size: 1.2rem;
             opacity: 0.8;
-            user-select: none;
             animation: fall linear forwards;
         }
         @keyframes fall {
@@ -65,7 +64,8 @@
         /* ШАПКА */
         header {
             height: 55px;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(5px);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -76,7 +76,7 @@
         .logo { font-weight: 900; font-size: 1rem; color: var(--primary); text-transform: uppercase; }
         .pause-btn { 
             background: var(--primary); color: white; border: none; width: 35px; height: 35px; 
-            border-radius: 50%; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 10px; cursor: pointer; font-size: 1rem;
         }
 
         main {
@@ -85,7 +85,6 @@
             flex-direction: column;
             overflow: hidden;
             padding: 10px;
-            position: relative;
         }
 
         /* ИГРОВОЕ ПОЛЕ */
@@ -100,10 +99,10 @@
             padding: 10px 0;
         }
 
-        .word { display: flex; gap: 4px; margin-right: 12px; margin-bottom: 20px; }
+        .word { display: flex; gap: 4px; margin-right: 15px; margin-bottom: 22px; }
 
         .cell {
-            width: clamp(30px, 8vw, 45px); 
+            width: clamp(32px, 8.5vw, 48px); 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -119,79 +118,80 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(1rem, 5vw, 1.5rem);
+            font-size: clamp(1.1rem, 5.5vw, 1.6rem);
             font-weight: bold;
-            box-shadow: 0 3px 0 #bdc3c7;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
 
-        .num-label { margin-top: 4px; font-size: 0.7rem; color: #7f8c8d; font-weight: bold; }
+        .num-label { margin-top: 4px; font-size: 0.75rem; color: #444; font-weight: 900; }
 
-        .cell.selected .letter-box { border-color: var(--primary); background: #fff5f5; transform: translateY(-2px); box-shadow: 0 5px 0 rgba(192, 57, 43, 0.2); }
-        .cell.correct .letter-box { color: var(--correct); border-color: var(--correct); box-shadow: 0 3px 0 #27ae6044; }
+        .cell.selected .letter-box { border-color: var(--primary); background: #fff; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(192, 57, 43, 0.2); }
+        .cell.correct .letter-box { color: var(--correct); border-color: var(--correct); }
         .cell.error .letter-box { color: #e74c3c; border-color: #e74c3c; animation: shake 0.3s; }
 
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 
         /* КЛАВИАТУРА */
         #keyboard-wrapper {
-            background: rgba(44, 62, 80, 0.1);
-            backdrop-filter: blur(5px);
-            padding: 10px 5px;
-            border-radius: 20px 20px 0 0;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 12px 6px;
+            border-radius: 24px 24px 0 0;
             width: 100%;
             max-width: 650px;
             margin: 0 auto;
             flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.3);
         }
 
-        .kbd-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 6px; width: 100%; }
+        .kbd-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 7px; width: 100%; }
 
         .key {
             background: #fff;
-            height: clamp(40px, 7vh, 55px);
+            height: clamp(42px, 7.5vh, 58px);
             flex: 1;
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: clamp(0.8rem, 4vw, 1.2rem);
+            font-weight: 800;
+            font-size: clamp(0.9rem, 4.5vw, 1.3rem);
             cursor: pointer;
             box-shadow: 0 3px 0 #bdc3c7;
             max-width: 50px;
         }
         .key:active { transform: translateY(2px); box-shadow: none; }
 
-        /* ПОДСКАЗКИ */
-        .hints-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+        /* ПОДСКАЗКИ (п. 4.5.1) */
+        .hints-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
         .hint-btn {
             background: var(--hint-color); color: white; border: none; padding: 10px; border-radius: 12px;
-            cursor: pointer; font-weight: bold;
+            cursor: pointer; font-weight: bold; box-shadow: 0 3px 0 #1c5985;
         }
-        .hint-btn div { font-size: 10px; }
-        .hint-btn span { font-size: 8px; opacity: 0.9; display: block; }
+        .hint-btn div { font-size: 11px; text-transform: uppercase; }
+        .hint-btn span { font-size: 8px; opacity: 0.9; display: block; margin-top: 2px; }
 
         /* ЭКРАНЫ */
         .overlay {
             position: fixed; inset: 0;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
             z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center;
-            color: white; padding: 20px; text-align: center;
+            color: white; padding: 20px; text-align: center; backdrop-filter: blur(8px);
         }
 
-        .menu-logo { font-size: 2.8rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.5); margin-bottom: 5px; }
-        .holiday-wish { font-size: 1.2rem; margin-bottom: 30px; color: #f1c40f; font-weight: bold; }
+        .menu-logo { font-size: 3rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.4); margin-bottom: 5px; }
+        .holiday-wish { font-size: 1.2rem; margin-bottom: 35px; color: #f1c40f; font-weight: bold; letter-spacing: 1px; }
 
         .btn-ui {
-            background: var(--primary); color: white; border: none; padding: 18px 50px; border-radius: 40px;
-            font-size: 1.4rem; font-weight: 900; cursor: pointer; min-width: 240px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s;
+            background: var(--primary); color: white; border: none; padding: 20px 60px; border-radius: 50px;
+            font-size: 1.6rem; font-weight: 900; cursor: pointer; min-width: 260px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3); transition: transform 0.2s;
         }
         .btn-ui:active { transform: scale(0.95); }
 
         @media (orientation: landscape) and (min-width: 700px) {
             main { flex-direction: row; }
-            #keyboard-wrapper { width: 380px; border-radius: 20px; margin: auto 10px; }
+            #keyboard-wrapper { width: 380px; border-radius: 24px; margin: auto 15px; }
             #puzzle-container { flex: 1; }
         }
     </style>
@@ -200,29 +200,30 @@
 
 <div id="snow-container"></div>
 
-<!-- МЕНЮ -->
+<!-- ГЛАВНОЕ МЕНЮ -->
 <div id="menu-screen" class="overlay" style="display: flex;">
-    <div style="font-size: 4rem;">🎄</div>
+    <div style="font-size: 5rem; margin-bottom: 10px;">🎄</div>
     <div class="menu-logo">КРИПТОГРАММА</div>
     <div class="holiday-wish" id="ui-holiday">С НОВЫМ 2026 ГОДОМ!</div>
     <button class="btn-ui" onclick="startGame()" id="ui-play">ИГРАТЬ</button>
 </div>
 
-<!-- ПАУЗА -->
+<!-- ЭКРАН ПАУЗЫ -->
 <div id="pause-screen" class="overlay">
-    <h2 style="font-size: 3rem;" id="ui-pause-title">ПАУЗА</h2>
+    <h2 style="font-size: 3.5rem;" id="ui-pause-title">ПАУЗА</h2>
     <button class="btn-ui" onclick="togglePause()" id="ui-resume">ПРОДОЛЖИТЬ</button>
-    <button class="btn-ui" style="background:#555; margin-top:15px; font-size:1rem;" onclick="location.reload()" id="ui-to-menu">В МЕНЮ</button>
+    <button class="btn-ui" style="background:#555; margin-top:20px; font-size:1.1rem;" onclick="location.reload()" id="ui-to-menu">В МЕНЮ</button>
 </div>
 
-<!-- ПОБЕДА -->
+<!-- ЭКРАН ПОБЕДЫ -->
 <div id="win-screen" class="overlay">
-    <div style="font-size: 5rem;">🎁</div>
+    <div style="font-size: 6rem; margin-bottom: 10px;">🎁</div>
     <h2 id="ui-win-title" style="font-size: 2.5rem; color: #f1c40f;">ВЕРНО!</h2>
-    <p id="phrase-display" style="font-style: italic; opacity: 0.9; font-size: 1.3rem; margin-bottom: 30px; max-width: 400px;"></p>
+    <p id="phrase-display" style="font-style: italic; opacity: 0.9; font-size: 1.4rem; margin-bottom: 35px; max-width: 450px; line-height: 1.4;"></p>
     <button class="btn-ui" onclick="nextLevel()" id="ui-next-btn">ДАЛЕЕ</button>
 </div>
 
+<!-- ИНТЕРФЕЙС ИГРЫ -->
 <header>
     <div class="logo">❄️ <span id="ui-logo-text">КРИПТОГРАММА</span></div>
     <button class="pause-btn" onclick="togglePause()">⏸</button>
@@ -265,7 +266,7 @@
             win: "ПОБЕДА!",
             next: "ДАЛЕЕ",
             kbdRows: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЁ"],
-            phrases: ["СЧАСТЛИВОГО НОВОГО ГОДА", "МОРОЗ И СОЛНЦЕ ДЕНЬ ЧУДЕСНЫЙ", "ЗИМА БЛИЗКО", "СКОРО НОВЫЙ ГОД", "ПУСТЬ СБЫВАЮТСЯ МЕЧТЫ"]
+            phrases: ["СЧАСТЛИВОГО НОВОГО ГОДА", "МОРОЗ И СОЛНЦЕ ДЕНЬ ЧУДЕСНЫЙ", "ЗИМА БЛИЗКО", "СКОРО НОВЫЙ ГОД", "ПУСТЬ СБЫВАЮТСЯ МЕЧТЫ", "ЗИМНЯЯ СКАЗКА", "ВРЕМЯ ПОДАРКОВ"]
         },
         en: {
             logo: "CRYPTOGRAM",
@@ -280,7 +281,7 @@
             win: "WELL DONE!",
             next: "NEXT LEVEL",
             kbdRows: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"],
-            phrases: ["HAPPY NEW YEAR", "WINTER IS COMING", "LET IT SNOW", "MERRY CHRISTMAS", "HAPPY HOLIDAYS"]
+            phrases: ["HAPPY NEW YEAR", "WINTER IS COMING", "LET IT SNOW", "MERRY CHRISTMAS", "HAPPY HOLIDAYS", "WINTER WONDERLAND"]
         }
     };
 
@@ -300,7 +301,7 @@
     }
     setInterval(createSnowflake, 200);
 
-    // SDK
+    // ИНИЦИАЛИЗАЦИЯ SDK (п. 2.14 и Loading API)
     if (typeof YaGames !== 'undefined') {
         YaGames.init().then(ysdk => {
             sdk = ysdk;
@@ -351,6 +352,7 @@
             charMap[letter] = shuffledNums[i];
             numMap[shuffledNums[i]] = letter;
         });
+        // Открываем 3 буквы на старте
         uniqueLetters.sort(() => Math.random() - 0.5).slice(0, 3).forEach(l => solvedNums.push(charMap[l]));
         renderBoard();
         renderKeyboard();
