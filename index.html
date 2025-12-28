@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Криптограмма</title>
-    <!-- SDK Яндекс Игр -->
     <script src="https://yandex.ru/games/sdk/v2"></script>
     <style>
         :root {
@@ -16,9 +15,10 @@
             --text: #2c3e50;
             --border: #d1d5db;
             --hint-color: #2980b9;
+            --tv-focus-color: #f1c40f;
         }
 
-        /* ПУНКТ 1.6.1.8 и 1.6.2.7 - Запрет выделения и меню */
+        /* Запрет выделения и меню (п. 1.6.1.8, 1.6.2.7) */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent;
@@ -28,13 +28,20 @@
             outline: none;
         }
 
-        /* ПУНКТ 1.10.2 - Отсутствие системного скролла */
         body {
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0; padding: 0; display: flex; flex-direction: column;
-            height: 100vh; height: -webkit-fill-available; overflow: hidden;
+            height: 100vh; overflow: hidden;
             background-color: var(--bg-color);
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='100' viewBox='0 0 80 100'%3E%3Cpath d='M40 10 L55 40 L48 40 L62 70 L43 70 L43 85 L37 85 L37 70 L18 70 L32 40 L25 40 Z' fill='%2327ae60' fill-opacity='0.15'/%3E%3C/svg%3E");
+        }
+
+        /* Фокус для ТВ (п. 1.6.3.2) */
+        .tv-focus {
+            outline: 5px solid var(--tv-focus-color) !important;
+            transform: scale(1.05) !important;
+            z-index: 50;
+            box-shadow: 0 0 15px var(--tv-focus-color) !important;
         }
 
         #snow-container { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
@@ -47,95 +54,88 @@
             padding: 0 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10;
         }
         .logo { font-weight: 900; font-size: 1rem; color: var(--primary); text-transform: uppercase; }
-        /* ПУНКТ 1.8 - Адаптивные размеры кнопок (крупные для пальцев) */
-        .pause-btn { 
-            background: var(--primary); color: white; border: none; min-width: 44px; min-height: 44px; 
-            border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        .icon-btn { 
+            background: var(--primary); color: white; border: none; width: 38px; height: 38px; 
+            border-radius: 10px; cursor: pointer; font-size: 1.1rem;
         }
 
         main { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 10px; }
-        #puzzle-container { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; overflow-y: auto; gap: 8px; padding: 10px 0; }
+        #puzzle-container { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; overflow-y: auto; gap: 8px; }
         .word { display: flex; gap: 4px; margin-right: 15px; margin-bottom: 22px; }
-        .cell { width: clamp(32px, 8.5vw, 48px); display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .cell { width: clamp(32px, 8.5vw, 48px); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; }
         .letter-box {
             width: 100%; aspect-ratio: 1 / 1.1; background: var(--card); border: 2px solid var(--border);
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            font-size: clamp(1.1rem, 5.5vw, 1.6rem); font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            font-size: clamp(1rem, 5vw, 1.5rem); font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
         .num-label { margin-top: 4px; font-size: 0.75rem; color: #444; font-weight: 900; }
-        .cell.selected .letter-box { border-color: var(--primary); background: #fff; transform: translateY(-3px); }
+        .cell.selected .letter-box { border-color: var(--primary); background: #fff; }
         .cell.correct .letter-box { color: var(--correct); border-color: var(--correct); }
         .cell.error .letter-box { color: #e74c3c; border-color: #e74c3c; animation: shake 0.3s; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 
         #keyboard-wrapper {
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);
-            padding: 12px 6px; border-radius: 24px 24px 0 0; width: 100%; max-width: 650px; margin: 0 auto;
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
+            padding: 10px 5px; border-radius: 20px 20px 0 0; width: 100%; max-width: 650px; margin: 0 auto;
         }
-        .kbd-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 7px; }
+        .kbd-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 6px; }
         .key {
-            background: #fff; height: clamp(44px, 8vh, 60px); flex: 1; border-radius: 10px;
+            background: #fff; height: clamp(40px, 7.5vh, 55px); flex: 1; border-radius: 8px;
             display: flex; align-items: center; justify-content: center; font-weight: 800;
-            font-size: clamp(0.9rem, 4.5vw, 1.3rem); cursor: pointer; box-shadow: 0 3px 0 #bdc3c7; max-width: 55px;
+            font-size: clamp(0.8rem, 4vw, 1.2rem); cursor: pointer; box-shadow: 0 3px 0 #bdc3c7; max-width: 50px;
         }
-        .key:active { transform: translateY(2px); box-shadow: none; }
 
-        /* ПУНКТ 4.5.1 - Однозначное отображение рекламы */
-        .hints-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
-        .hint-btn { 
-            background: var(--hint-color); color: white; border: none; min-height: 50px; 
-            border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .hint-btn div { font-size: 11px; text-transform: uppercase; font-weight: bold; }
-        .hint-btn span { font-size: 9px; opacity: 0.9; margin-top: 2px; }
+        .hints-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
+        .hint-btn { background: var(--hint-color); color: white; border: none; padding: 10px; border-radius: 12px; cursor: pointer; text-align: center; }
+        .hint-btn span { font-size: 8px; display: block; margin-top: 2px; }
 
         .overlay {
             position: fixed; inset: 0; z-index: 200; display: none; flex-direction: column;
             align-items: center; justify-content: center; color: white; padding: 20px;
-            text-align: center; backdrop-filter: blur(10px);
-            background: linear-gradient(135deg, rgba(30, 60, 114, 0.98) 0%, rgba(42, 82, 152, 0.98) 100%);
+            backdrop-filter: blur(10px); background: linear-gradient(135deg, rgba(30, 60, 114, 0.98) 0%, rgba(42, 82, 152, 0.98) 100%);
         }
-        .menu-logo { font-size: 3rem; font-weight: 900; text-shadow: 0 0 20px rgba(255,255,255,0.4); margin-bottom: 5px; }
-        .holiday-wish { font-size: 1.2rem; margin-bottom: 35px; color: #f1c40f; font-weight: bold; }
         .btn-ui {
-            background: var(--primary); color: white; border: none; padding: 20px 60px; border-radius: 50px;
-            font-size: 1.6rem; font-weight: 900; cursor: pointer; min-width: 260px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            background: var(--primary); color: white; border: none; padding: 18px 50px; border-radius: 50px;
+            font-size: 1.5rem; font-weight: 900; cursor: pointer; min-width: 260px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
 
-        @media (orientation: landscape) and (min-width: 700px) {
+        @media (orientation: landscape) {
             main { flex-direction: row; }
-            #keyboard-wrapper { width: 380px; border-radius: 24px; margin: auto 15px; }
-            #puzzle-container { flex: 1; }
+            #keyboard-wrapper { width: 380px; border-radius: 20px; margin: auto 10px; }
         }
     </style>
 </head>
-<body oncontextmenu="return false;"> <!-- ПУНКТ 1.6.2.7 -->
+<body oncontextmenu="return false;">
 
 <div id="snow-container"></div>
 
+<!-- ЭКРАНЫ -->
 <div id="menu-screen" class="overlay" style="display: flex;">
     <div style="font-size: 5rem; margin-bottom: 10px;">🎄</div>
-    <div class="menu-logo logo-text">КРИПТОГРАММА</div>
-    <div class="holiday-wish" id="ui-holiday"></div>
-    <button class="btn-ui" onclick="startGame()" id="ui-play"></button>
+    <div style="font-size: 2.5rem; font-weight: 900;" class="logo-text">КРИПТОГРАММА</div>
+    <div style="font-size: 1.1rem; color: #f1c40f; margin-bottom: 30px;" id="ui-holiday">С НОВЫМ 2026 ГОДОМ!</div>
+    <button class="btn-ui focusable" onclick="startGame()" id="ui-play">ИГРАТЬ</button>
 </div>
 
 <div id="pause-screen" class="overlay">
-    <h2 style="font-size: 3.5rem;" id="ui-pause-title"></h2>
-    <button class="btn-ui" onclick="togglePause()" id="ui-resume"></button>
-    <button class="btn-ui" style="background:#555; margin-top:20px; font-size:1.1rem;" onclick="resetProgress()" id="ui-reset">СБРОСИТЬ</button>
+    <h2 style="font-size: 3rem;" id="ui-pause-title">ПАУЗА</h2>
+    <button class="btn-ui focusable" onclick="togglePause()" id="ui-resume">ПРОДОЛЖИТЬ</button>
+    <button class="btn-ui focusable" style="background:#555; margin-top:20px; font-size:1rem;" onclick="resetProgress()" id="ui-reset">НОВАЯ ИГРА</button>
 </div>
 
 <div id="win-screen" class="overlay">
-    <div style="font-size: 6rem; margin-bottom: 10px;">🎁</div>
-    <h2 id="ui-win-title" style="font-size: 2.5rem; color: #f1c40f;"></h2>
-    <p id="phrase-display" style="font-style: italic; opacity: 0.9; font-size: 1.4rem; margin-bottom: 35px; max-width: 450px;"></p>
-    <button class="btn-ui" onclick="nextLevel()" id="ui-next-btn"></button>
+    <div style="font-size: 5rem;">🎁</div>
+    <h2 id="ui-win-title" style="font-size: 2.5rem; color: #f1c40f;">ВЕРНО!</h2>
+    <p id="phrase-display" style="font-style: italic; opacity: 0.9; font-size: 1.3rem; margin-bottom: 30px;"></p>
+    <button class="btn-ui focusable" onclick="nextLevel()" id="ui-next-btn">ДАЛЕЕ</button>
 </div>
 
 <header>
     <div class="logo">❄️ <span class="logo-text">КРИПТОГРАММА</span></div>
-    <button class="pause-btn" onclick="togglePause()">⏸</button>
+    <div style="display:flex; gap:10px;">
+        <button class="icon-btn focusable" onclick="toggleSound()" id="sound-btn">🔊</button>
+        <button class="icon-btn focusable" onclick="togglePause()">⏸</button>
+    </div>
 </header>
 
 <main>
@@ -143,13 +143,13 @@
     <div id="keyboard-wrapper">
         <div id="keyboard-content"></div>
         <div class="hints-bar">
-            <button class="hint-btn" onclick="showHint('letter')">
-                <div id="ui-hint-1"></div>
-                <span class="ui-ads"></span>
+            <button class="hint-btn focusable" onclick="showHint('letter')">
+                <div id="ui-hint-1">ОТКРЫТЬ БУКВУ</div>
+                <span class="ui-ads">СМОТРЕТЬ РЕКЛАМУ</span>
             </button>
-            <button class="hint-btn" onclick="showHint('random')">
-                <div id="ui-hint-2"></div>
-                <span class="ui-ads"></span>
+            <button class="hint-btn focusable" onclick="showHint('random')">
+                <div id="ui-hint-2">СЛУЧАЙНАЯ БУКВА</div>
+                <span class="ui-ads">СМОТРЕТЬ РЕКЛАМУ</span>
             </button>
         </div>
     </div>
@@ -157,62 +157,106 @@
 
 <script>
     let sdk, phrase, charMap, numMap, solvedNums, selectedNum;
-    let lang = 'ru'; 
+    let lang = 'ru';
     let isPaused = false;
+    let isMuted = false;
+    let isTV = false;
+    let focusIndex = 0;
+
+    // ПУНКТ 1.6.1.6 - Web Audio API
+    const AudioEngine = {
+        ctx: null, gainNode: null,
+        init() {
+            if (this.ctx) return;
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.gainNode = this.ctx.createGain();
+            this.gainNode.connect(this.ctx.destination);
+        },
+        play(freq) {
+            if (!this.ctx || isMuted || isPaused) return;
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.connect(g); g.connect(this.gainNode);
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+        },
+        suspend() { if (this.ctx) this.ctx.suspend(); },
+        resume() { if (this.ctx) this.ctx.resume(); }
+    };
 
     const translations = {
         ru: {
-            logo: "КРИПТОГРАММА",
-            wish: "С НОВЫМ 2026 ГОДОМ!",
-            play: "ИГРАТЬ",
-            resume: "ПРОДОЛЖИТЬ",
-            pause: "ПАУЗА",
-            reset: "НОВАЯ ИГРА",
-            hint1: "ОТКРЫТЬ ВЫБРАННУЮ",
-            hint2: "СЛУЧАЙНАЯ БУКВА",
-            ads: "СМОТРЕТЬ РЕКЛАМУ ЗА ПОДСКАЗКУ",
-            win: "ПОБЕДА!",
-            next: "ДАЛЕЕ",
-            kbdRows: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЁ"],
-            phrases: ["СЧАСТЛИВОГО НОВОГО ГОДА", "ЗИМНЯЯ СКАЗКА", "ВРЕМЯ ПОДАРКОВ", "МОРОЗ И СОЛНЦЕ", "СНЕЖНЫЙ КОМ", "ПУСТЬ МЕЧТЫ СБЫВАЮТСЯ"]
+            logo: "КРИПТОГРАММА", wish: "С НОВЫМ 2026 ГОДОМ!", play: "ИГРАТЬ", resume: "ПРОДОЛЖИТЬ", pause: "ПАУЗА",
+            reset: "НОВАЯ ИГРА", hint1: "ОТКРЫТЬ БУКВУ", hint2: "СЛУЧАЙНАЯ БУКВА", ads: "СМОТРЕТЬ РЕКЛАМУ ЗА ПОДСКАЗКУ",
+            win: "ПОБЕДА!", next: "ДАЛЕЕ", kbdRows: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЁ"],
+            phrases: ["С НОВЫМ ГОДОМ", "ЗИМНЯЯ СКАЗКА", "МОРОЗ И СОЛНЦЕ", "ВРЕМЯ ПОДАРКОВ", "ПУСТЬ СБЫВАЮТСЯ МЕЧТЫ"]
         },
         en: {
-            logo: "CRYPTOGRAM",
-            wish: "HAPPY NEW YEAR 2026!",
-            play: "PLAY",
-            resume: "CONTINUE",
-            pause: "PAUSE",
-            reset: "NEW GAME",
-            hint1: "REVEAL SELECTED",
-            hint2: "RANDOM LETTER",
-            ads: "WATCH AD FOR A HINT",
-            win: "WELL DONE!",
-            next: "NEXT",
-            kbdRows: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"],
-            phrases: ["HAPPY NEW YEAR", "WINTER WONDERLAND", "GIFT TIME", "LET IT SNOW", "FROSTY MORNING", "DREAMS COME TRUE"]
+            logo: "CRYPTOGRAM", wish: "HAPPY NEW YEAR 2026!", play: "PLAY", resume: "RESUME", pause: "PAUSE",
+            reset: "NEW GAME", hint1: "OPEN LETTER", hint2: "RANDOM LETTER", ads: "WATCH AD FOR A HINT",
+            win: "WELL DONE!", next: "NEXT", kbdRows: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"],
+            phrases: ["HAPPY NEW YEAR", "WINTER WONDERLAND", "LET IT SNOW", "FROSTY MORNING", "GIFT TIME"]
         }
     };
 
-    // 1. Инициализация SDK и ПУНКТ 2.14 (Автоопределение языка)
+    // ПУНКТ 1.19.1 - Инициализация SDK
     if (typeof YaGames !== 'undefined') {
         YaGames.init().then(ysdk => {
             sdk = ysdk;
             lang = sdk.environment.i18n.lang.startsWith('ru') ? 'ru' : 'en';
+            isTV = sdk.deviceInfo.type === 'tv';
             applyLocalization();
-            
-            // ПУНКТ 1.19.2 - Game Ready API
-            if (sdk.features && sdk.features.LoadingAPI) {
-                sdk.features.LoadingAPI.ready();
-            }
-
-            // ПУНКТ 1.3 - Остановка звука/процесса при сворачивании
-            sdk.onEvent(sdk.EVENTS.EXIT_FULLSCREEN, () => { if(!isPaused) togglePause(); });
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden && !isPaused) togglePause();
-            });
+            if (sdk.features && sdk.features.LoadingAPI) sdk.features.LoadingAPI.ready(); // ПУНКТ 1.19.2
+            if (isTV) initTV();
         });
-    } else {
-        applyLocalization();
+    }
+
+    // ПУНКТ 1.9 - Механика сохранения
+    function saveProgress() {
+        const data = { phrase, charMap, numMap, solvedNums };
+        localStorage.setItem('cryptogram_save_v2', JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        const saved = localStorage.getItem('cryptogram_save_v2');
+        if (saved) {
+            const data = JSON.parse(saved);
+            phrase = data.phrase; charMap = data.charMap;
+            numMap = data.numMap; solvedNums = data.solvedNums;
+            return true;
+        }
+        return false;
+    }
+
+    function resetProgress() {
+        localStorage.removeItem('cryptogram_save_v2');
+        location.reload();
+    }
+
+    function startGame() {
+        AudioEngine.init();
+        document.getElementById('menu-screen').style.display = 'none';
+        if (!loadProgress()) startNewLevel();
+        else { renderBoard(); renderKeyboard(); }
+    }
+
+    // ТВ Навигация (п. 1.6.3.2)
+    function initTV() {
+        document.addEventListener('keydown', (e) => {
+            const items = Array.from(document.querySelectorAll('.focusable:not([style*="display: none"])'));
+            if (e.key === 'ArrowRight') focusIndex = (focusIndex + 1) % items.length;
+            if (e.key === 'ArrowLeft') focusIndex = (focusIndex - 1 + items.length) % items.length;
+            if (e.key === 'Enter') items[focusIndex].click();
+            if (e.key === 'Escape') togglePause();
+            updateFocus();
+        });
+    }
+    function updateFocus() {
+        document.querySelectorAll('.tv-focus').forEach(el => el.classList.remove('tv-focus'));
+        const items = Array.from(document.querySelectorAll('.focusable'));
+        if (items[focusIndex]) items[focusIndex].classList.add('tv-focus');
     }
 
     function applyLocalization() {
@@ -221,7 +265,6 @@
         document.getElementById('ui-holiday').innerText = t.wish;
         document.getElementById('ui-play').innerText = t.play;
         document.getElementById('ui-resume').innerText = t.resume;
-        document.getElementById('ui-pause-title').innerText = t.pause;
         document.getElementById('ui-reset').innerText = t.reset;
         document.getElementById('ui-hint-1').innerText = t.hint1;
         document.getElementById('ui-hint-2').innerText = t.hint2;
@@ -230,87 +273,26 @@
         document.getElementById('ui-next-btn').innerText = t.next;
     }
 
-    // СНЕГОПАД
-    function createSnowflake() {
-        if (isPaused || document.hidden) return;
-        const snow = document.getElementById('snow-container');
-        const snowflake = document.createElement('div');
-        snowflake.className = 'snowflake';
-        snowflake.innerText = '❄';
-        snowflake.style.left = Math.random() * 100 + 'vw';
-        snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
-        snowflake.style.opacity = Math.random();
-        snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
-        snow.appendChild(snowflake);
-        setTimeout(() => snowflake.remove(), 5000);
-    }
-    setInterval(createSnowflake, 200);
-
-    function startGame() {
-        document.getElementById('menu-screen').style.display = 'none';
-        loadOrStartNewLevel();
-    }
-
-    function togglePause() {
-        isPaused = !isPaused;
-        document.getElementById('pause-screen').style.display = isPaused ? 'flex' : 'none';
-        // ПУНКТ 4.7 - Пауза геймплея при открытии меню/рекламы
-    }
-
-    // ПУНКТ 1.9 - Сохранение прогресса
-    function saveProgress() {
-        const state = { phrase, charMap, numMap, solvedNums };
-        localStorage.setItem('cryptogram_save', JSON.stringify(state));
-    }
-
-    function loadOrStartNewLevel() {
-        const saved = localStorage.getItem('cryptogram_save');
-        if (saved) {
-            const state = JSON.parse(saved);
-            phrase = state.phrase;
-            charMap = state.charMap;
-            numMap = state.numMap;
-            solvedNums = state.solvedNums;
-            renderBoard();
-            renderKeyboard();
-        } else {
-            startNewLevel();
-        }
-    }
-
-    function resetProgress() {
-        localStorage.removeItem('cryptogram_save');
-        location.reload();
-    }
-
     function startNewLevel() {
         const t = translations[lang];
         phrase = t.phrases[Math.floor(Math.random() * t.phrases.length)];
-        charMap = {}; numMap = {}; solvedNums = []; selectedNum = null;
-        const lettersOnly = phrase.replace(/\s/g, '').split('');
-        const uniqueLetters = [...new Set(lettersOnly)];
-        const shuffledNums = Array.from({length: 40}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-        uniqueLetters.forEach((letter, i) => {
-            charMap[letter] = shuffledNums[i];
-            numMap[shuffledNums[i]] = letter;
-        });
-        uniqueLetters.sort(() => Math.random() - 0.5).slice(0, 3).forEach(l => solvedNums.push(charMap[l]));
-        renderBoard();
-        renderKeyboard();
-        saveProgress();
+        charMap = {}; numMap = {}; solvedNums = [];
+        const unique = [...new Set(phrase.replace(/\s/g, '').split(''))];
+        const nums = Array.from({length: 40}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        unique.forEach((l, i) => { charMap[l] = nums[i]; numMap[nums[i]] = l; });
+        unique.sort(() => Math.random() - 0.5).slice(0, 3).forEach(l => solvedNums.push(charMap[l]));
+        renderBoard(); renderKeyboard(); saveProgress();
     }
 
     function renderBoard() {
         const container = document.getElementById('puzzle-container');
         container.innerHTML = '';
         phrase.split(' ').forEach(word => {
-            const wordDiv = document.createElement('div');
-            wordDiv.className = 'word';
+            const wordDiv = document.createElement('div'); wordDiv.className = 'word';
             [...word].forEach(char => {
-                const n = charMap[char];
-                const isSolved = solvedNums.includes(n);
+                const n = charMap[char]; const isSolved = solvedNums.includes(n);
                 const cell = document.createElement('div');
-                cell.className = `cell num-${n} ${isSolved ? 'correct' : ''}`;
+                cell.className = `cell focusable num-${n} ${isSolved ? 'correct' : ''}`;
                 cell.innerHTML = `<div class="letter-box">${isSolved ? char : ''}</div><div class="num-label">${n}</div>`;
                 cell.onclick = () => selectCell(n);
                 wordDiv.appendChild(cell);
@@ -320,19 +302,15 @@
     }
 
     function renderKeyboard() {
-        const kbdContainer = document.getElementById('keyboard-content');
-        kbdContainer.innerHTML = '';
-        translations[lang].kbdRows.forEach(rowString => {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'kbd-row';
-            rowString.split('').forEach(l => {
-                const key = document.createElement('div');
-                key.className = 'key';
-                key.innerText = l;
-                key.onclick = () => handleInput(l);
+        const kbd = document.getElementById('keyboard-content'); kbd.innerHTML = '';
+        translations[lang].kbdRows.forEach(row => {
+            const rowDiv = document.createElement('div'); rowDiv.className = 'kbd-row';
+            row.split('').forEach(l => {
+                const key = document.createElement('div'); key.className = 'key focusable';
+                key.innerText = l; key.onclick = () => handleInput(l);
                 rowDiv.appendChild(key);
             });
-            kbdContainer.appendChild(rowDiv);
+            kbd.appendChild(rowDiv);
         });
     }
 
@@ -345,21 +323,18 @@
 
     function handleInput(key) {
         if (isPaused || !selectedNum) return;
-        const correctChar = numMap[selectedNum];
-        if (key === correctChar) {
-            solvedNums.push(selectedNum);
+        const correct = numMap[selectedNum];
+        if (key === correct) {
+            AudioEngine.play(880); solvedNums.push(selectedNum);
             document.querySelectorAll(`.num-${selectedNum}`).forEach(c => {
                 c.querySelector('.letter-box').innerText = key;
                 c.classList.add('correct');
-                c.classList.remove('selected');
             });
-            selectedNum = null;
-            saveProgress();
-            checkWin();
+            selectedNum = null; saveProgress(); checkWin();
         } else {
+            AudioEngine.play(150);
             document.querySelectorAll(`.num-${selectedNum}`).forEach(c => {
-                c.classList.add('error');
-                setTimeout(() => c.classList.remove('error'), 300);
+                c.classList.add('error'); setTimeout(() => c.classList.remove('error'), 300);
             });
         }
     }
@@ -367,30 +342,28 @@
     function showHint(type) {
         if (isPaused) return;
         if (!sdk) { executeHint(type); return; }
-        // ПУНКТ 4.7 - Пауза игры при показе рекламы
+        AudioEngine.suspend();
         sdk.adv.showRewardedVideo({
             callbacks: {
-                onOpen: () => { isPaused = true; },
                 onRewarded: () => executeHint(type),
-                onClose: () => { isPaused = false; },
-                onError: () => { isPaused = false; }
+                onClose: () => AudioEngine.resume()
             }
         });
     }
 
     function executeHint(type) {
-        let nToOpen = (type === 'letter' && selectedNum) ? selectedNum : null;
-        if (!nToOpen) {
-            const remaining = Object.keys(numMap).map(Number).filter(n => !solvedNums.includes(n));
-            if (remaining.length > 0) nToOpen = remaining[Math.floor(Math.random() * remaining.length)];
+        let n = (type === 'letter' && selectedNum) ? selectedNum : null;
+        if (!n) {
+            const rem = Object.keys(numMap).map(Number).filter(x => !solvedNums.includes(x));
+            n = rem[Math.floor(Math.random() * rem.length)];
         }
-        if (nToOpen) { selectedNum = nToOpen; handleInput(numMap[nToOpen]); }
+        if (n) { selectedNum = n; handleInput(numMap[n]); }
     }
 
     function checkWin() {
-        const lettersOnly = phrase.replace(/\s/g, '');
-        if ([...lettersOnly].every(l => solvedNums.includes(charMap[l]))) {
-            localStorage.removeItem('cryptogram_save');
+        const letters = phrase.replace(/\s/g, '');
+        if ([...letters].every(l => solvedNums.includes(charMap[l]))) {
+            localStorage.removeItem('cryptogram_save_v2');
             setTimeout(() => {
                 document.getElementById('phrase-display').innerText = `"${phrase}"`;
                 document.getElementById('win-screen').style.display = 'flex';
@@ -403,6 +376,20 @@
         if (sdk) sdk.adv.showFullscreenAdv({ callbacks: { onClose: () => startNewLevel() } });
         else startNewLevel();
     }
+
+    function togglePause() { isPaused = !isPaused; document.getElementById('pause-screen').style.display = isPaused ? 'flex' : 'none'; }
+    function toggleSound() { isMuted = !isMuted; document.getElementById('sound-btn').innerText = isMuted ? '🔇' : '🔊'; }
+
+    setInterval(() => {
+        if (isPaused || document.hidden) return;
+        const snow = document.getElementById('snow-container');
+        const sf = document.createElement('div');
+        sf.className = 'snowflake'; sf.innerText = '❄';
+        sf.style.left = Math.random() * 100 + 'vw';
+        sf.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        snow.appendChild(sf);
+        setTimeout(() => sf.remove(), 5000);
+    }, 250);
 </script>
 </body>
 </html>
