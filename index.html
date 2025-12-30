@@ -132,6 +132,97 @@
         /* ТВ СПЕЦИФИКАЦИЯ */
         body.is-tv .cell, body.is-tv .key, body.is-tv .hint-btn { outline: none; }
 
+        /* МОБИЛЬНЫЕ УСТРОЙСТВА (max-width: 768px) */
+        @media (max-width: 768px) {
+            /* Увеличенные ячейки для лучшей читаемости */
+            .cell {
+                width: clamp(45px, 12vw, 65px);
+            }
+            .letter-box {
+                font-size: clamp(1.5rem, 6vw, 2.2rem);
+                border-radius: 10px;
+                box-shadow: 0 6px 0 #bdc3c7;
+            }
+            .num-label {
+                font-size: 0.85rem;
+                margin-top: 8px;
+            }
+
+            /* Улучшенные отступы */
+            main {
+                padding: 20px 10px;
+            }
+            #puzzle-container {
+                gap: 12px;
+                margin-bottom: 50px;
+            }
+            .word {
+                margin-right: 25px;
+                margin-bottom: 30px;
+                gap: 8px;
+            }
+            .author-box {
+                padding-top: 30px;
+                margin-top: 15px;
+            }
+
+            /* Адаптивная клавиатура */
+            .key {
+                height: clamp(55px, 10vh, 70px);
+                font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+                border-radius: 10px;
+            }
+            .kbd-row {
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+
+            /* Кнопки подсказок */
+            .hint-btn {
+                padding: 16px 12px;
+                font-size: 0.75rem;
+                border-radius: 14px;
+            }
+            .hint-bar {
+                gap: 12px;
+                margin-top: 15px;
+            }
+
+            /* Заголовок */
+            header {
+                height: 70px;
+                padding: 0 15px;
+            }
+            .stats {
+                gap: 25px;
+                font-size: 1.1rem;
+            }
+        }
+
+        /* МАЛЕНЬКИЕ ЭКРАНЫ (max-width: 480px) */
+        @media (max-width: 480px) {
+            .cell {
+                width: clamp(50px, 14vw, 70px);
+            }
+            .letter-box {
+                font-size: clamp(1.8rem, 7vw, 2.5rem);
+            }
+            .key {
+                height: clamp(60px, 11vh, 75px);
+                font-size: clamp(1.2rem, 5vw, 1.6rem);
+            }
+            main {
+                padding: 25px 8px;
+            }
+            #puzzle-container {
+                gap: 15px;
+            }
+            .word {
+                gap: 10px;
+                margin-bottom: 35px;
+            }
+        }
+
         /* ГОРИЗОНТАЛЬНЫЙ РЕЖИМ (Десктоп/Планшет) */
         @media (orientation: landscape) and (min-height: 500px) {
             body { flex-direction: row; }
