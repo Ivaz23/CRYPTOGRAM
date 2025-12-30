@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Криптограмма</title>
+    <title>Криптограмма: Зимние Тайны</title>
+    <!-- SDK Yandex Games -->
     <script src="https://yandex.ru/games/sdk/v2"></script>
     <style>
         :root {
             --bg-color: #d6e4f0;
-            --card: rgba(255, 255, 255, 0.9);
+            --card: rgba(255, 255, 255, 0.98);
             --primary: #c0392b; 
             --correct: #27ae60;
-            --error: #e67e22;
+            --error: #e74c3c;
             --text: #2c3e50;
             --border: #d1d5db;
             --hint-color: #2980b9;
-            --tv-focus-color: #f1c40f;
+            --tv-focus: #f1c40f;
         }
 
-        /* Запрет выделения и меню (п. 1.6.1.8, 1.6.2.7) */
+        /* ТЕХНИЧЕСКИЕ ПРАВКИ (Защита от выделения и меню - п. 1.6.2.7) */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent;
@@ -28,80 +29,115 @@
             outline: none;
         }
 
+        html, body {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            overflow: hidden; background-color: var(--bg-color);
+            overscroll-behavior: none; /* Блокировка swipe-to-refresh iOS */
+        }
+
         body {
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0; padding: 0; display: flex; flex-direction: column;
-            height: 100vh; overflow: hidden;
-            background-color: var(--bg-color);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='100' viewBox='0 0 80 100'%3E%3Cpath d='M40 10 L55 40 L48 40 L62 70 L43 70 L43 85 L37 85 L37 70 L18 70 L32 40 L25 40 Z' fill='%2327ae60' fill-opacity='0.15'/%3E%3C/svg%3E");
+            display: flex; flex-direction: column;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 5 L38 22 L32 22 L45 38 L35 38 L35 50 L25 50 L25 38 L15 38 L28 22 L22 22 Z' fill='%2327ae60' fill-opacity='0.08'/%3E%3C/svg%3E");
+            background-attachment: fixed;
         }
 
-        /* Фокус для ТВ (п. 1.6.3.2) */
-        .tv-focus {
-            outline: 5px solid var(--tv-focus-color) !important;
-            transform: scale(1.05) !important;
-            z-index: 50;
-            box-shadow: 0 0 15px var(--tv-focus-color) !important;
-        }
+        #snow-container { position: fixed; inset: 0; pointer-events: none; z-index: 100; overflow: hidden; }
+        .snowflake { position: absolute; top: -20px; color: white; opacity: 0.6; animation: fall linear infinite; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
 
-        #snow-container { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
-        .snowflake { position: absolute; top: -10px; color: white; opacity: 0.8; animation: fall linear forwards; }
-        @keyframes fall { to { transform: translateY(105vh) rotate(360deg); } }
-
+        /* ИНТЕРФЕЙС ШАПКИ */
         header {
-            height: 55px; background: rgba(255,255,255,0.85); backdrop-filter: blur(5px);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10;
+            height: 60px; background: #fff; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 11; flex-shrink: 0;
         }
-        .logo { font-weight: 900; font-size: 1rem; color: var(--primary); text-transform: uppercase; }
-        .icon-btn { 
-            background: var(--primary); color: white; border: none; width: 38px; height: 38px; 
-            border-radius: 10px; cursor: pointer; font-size: 1.1rem;
+        .stats { display: flex; gap: 20px; font-weight: 900; }
+        .lives { color: var(--error); letter-spacing: 2px; }
+
+        /* ИГРОВОЕ ПОЛЕ (АДАПТИВНЫЙ СКРОЛЛ - п. 1.10.1) */
+        main {
+            flex: 1; display: flex; flex-direction: column;
+            overflow-y: auto; overflow-x: hidden; padding: 15px;
+            scroll-behavior: smooth;
         }
 
-        main { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 10px; }
-        #puzzle-container { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; overflow-y: auto; gap: 8px; }
-        .word { display: flex; gap: 4px; margin-right: 15px; margin-bottom: 22px; }
-        .cell { width: clamp(32px, 8.5vw, 48px); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; }
+        #puzzle-container {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            align-content: flex-start; gap: 8px; width: 100%; margin-bottom: 40px;
+        }
+
+        .word { display: flex; gap: 5px; margin-right: 18px; margin-bottom: 25px; }
+        .author-box { 
+            border-top: 2px dashed #95a5a6; padding-top: 25px; margin-top: 10px; 
+            width: 100%; display: flex; justify-content: center; flex-wrap: wrap; 
+        }
+
+        .cell { 
+            width: clamp(35px, 8.5vw, 55px); display: flex; flex-direction: column; 
+            align-items: center; cursor: pointer; transition: transform 0.15s;
+        }
         .letter-box {
-            width: 100%; aspect-ratio: 1 / 1.1; background: var(--card); border: 2px solid var(--border);
-            border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            font-size: clamp(1rem, 5vw, 1.5rem); font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            width: 100%; aspect-ratio: 1/1.15; background: var(--card);
+            border: 2px solid var(--border); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(1.2rem, 5vw, 1.8rem); font-weight: 900; box-shadow: 0 4px 0 #bdc3c7;
         }
-        .num-label { margin-top: 4px; font-size: 0.75rem; color: #444; font-weight: 900; }
-        .cell.selected .letter-box { border-color: var(--primary); background: #fff; }
-        .cell.correct .letter-box { color: var(--correct); border-color: var(--correct); }
-        .cell.error .letter-box { color: #e74c3c; border-color: #e74c3c; animation: shake 0.3s; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+        .num-label { margin-top: 5px; font-size: 0.75rem; color: #555; font-weight: 900; }
 
-        #keyboard-wrapper {
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
-            padding: 10px 5px; border-radius: 20px 20px 0 0; width: 100%; max-width: 650px; margin: 0 auto;
+        /* ПОДСВЕТКА И ТВ ФОКУС */
+        .cell.selected .letter-box { border-color: var(--primary); background: #fff; transform: translateY(-4px); box-shadow: 0 6px 12px rgba(192,57,43,0.3); }
+        .cell.correct-cell .letter-box { color: var(--correct); border-color: var(--correct); box-shadow: 0 4px 0 rgba(46,204,113,0.2); }
+        .cell.error-cell .letter-box { color: var(--error); border-color: var(--error); animation: shake 0.3s; }
+        .tv-focused { border: 4px solid var(--tv-focus) !important; transform: scale(1.1); }
+
+        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+        /* КЛАВИАТУРА */
+        #footer-ui {
+            flex-shrink: 0; background: rgba(255, 255, 255, 0.95);
+            padding: 10px 10px env(safe-area-inset-bottom);
+            border-top: 1px solid #ddd; width: 100%; max-width: 800px; margin: 0 auto;
+            border-radius: 20px 20px 0 0; z-index: 11;
         }
         .kbd-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 6px; }
         .key {
-            background: #fff; height: clamp(40px, 7.5vh, 55px); flex: 1; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-weight: 800;
-            font-size: clamp(0.8rem, 4vw, 1.2rem); cursor: pointer; box-shadow: 0 3px 0 #bdc3c7; max-width: 50px;
+            background: #fff; height: clamp(45px, 8vh, 60px); flex: 1; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: clamp(0.9rem, 4vw, 1.3rem);
+            cursor: pointer; border: 1px solid #ddd; box-shadow: 0 3px 0 #ccc;
+        }
+        .key:active { transform: translateY(2px); box-shadow: none; }
+        .key.finished { opacity: 0.2; background: #eee; pointer-events: none; }
+
+        .hint-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .hint-btn { 
+            background: var(--hint-color); color: #fff; border: none; padding: 14px; 
+            border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.7rem;
         }
 
-        .hints-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
-        .hint-btn { background: var(--hint-color); color: white; border: none; padding: 10px; border-radius: 12px; cursor: pointer; text-align: center; }
-        .hint-btn span { font-size: 8px; display: block; margin-top: 2px; }
-
+        /* ЭКРАНЫ */
         .overlay {
-            position: fixed; inset: 0; z-index: 200; display: none; flex-direction: column;
-            align-items: center; justify-content: center; color: white; padding: 20px;
-            backdrop-filter: blur(10px); background: linear-gradient(135deg, rgba(30, 60, 114, 0.98) 0%, rgba(42, 82, 152, 0.98) 100%);
+            position: fixed; inset: 0; z-index: 200; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; padding: 40px; text-align: center;
         }
-        .btn-ui {
-            background: var(--primary); color: white; border: none; padding: 18px 50px; border-radius: 50px;
-            font-size: 1.5rem; font-weight: 900; cursor: pointer; min-width: 260px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        .btn-main { 
+            background: var(--correct); color: white; border: none; padding: 22px 60px; 
+            border-radius: 50px; font-size: 1.6rem; font-weight: 900; cursor: pointer; 
+            margin-top: 30px; box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
 
-        @media (orientation: landscape) {
-            main { flex-direction: row; }
-            #keyboard-wrapper { width: 380px; border-radius: 20px; margin: auto 10px; }
+        /* ТВ СПЕЦИФИКАЦИЯ */
+        body.is-tv .cell, body.is-tv .key, body.is-tv .hint-btn { outline: none; }
+
+        /* ГОРИЗОНТАЛЬНЫЙ РЕЖИМ (Десктоп/Планшет) */
+        @media (orientation: landscape) and (min-height: 500px) {
+            body { flex-direction: row; }
+            header { position: absolute; width: 100%; top: 0; left: 0; }
+            main { padding-top: 80px; }
+            #footer-ui { width: 320px; border-radius: 20px; margin: auto 15px; border: none; height: fit-content; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         }
     </style>
 </head>
@@ -109,287 +145,255 @@
 
 <div id="snow-container"></div>
 
-<!-- ЭКРАНЫ -->
-<div id="menu-screen" class="overlay" style="display: flex;">
-    <div style="font-size: 5rem; margin-bottom: 10px;">🎄</div>
-    <div style="font-size: 2.5rem; font-weight: 900;" class="logo-text">КРИПТОГРАММА</div>
-    <div style="font-size: 1.1rem; color: #f1c40f; margin-bottom: 30px;" id="ui-holiday">С НОВЫМ 2026 ГОДОМ!</div>
-    <button class="btn-ui focusable" onclick="startGame()" id="ui-play">ИГРАТЬ</button>
+<!-- ГЛАВНОЕ МЕНЮ -->
+<div id="screen-menu" class="overlay" style="display: flex;">
+    <div style="font-size: 6rem; margin-bottom: 20px;">🎄</div>
+    <h1 style="font-size: 2.2rem; margin: 0;">КРИПТОГРАММА:<br>ЗИМНИЕ ТАЙНЫ</h1>
+    <div style="margin: 20px 0; font-size: 1.2rem; color: #f1c40f; font-weight: 900;">РЕКОРД: <span id="ui-record">0</span></div>
+    <button class="btn-main" onclick="startGame()">ИГРАТЬ</button>
 </div>
 
-<div id="pause-screen" class="overlay">
-    <h2 style="font-size: 3rem;" id="ui-pause-title">ПАУЗА</h2>
-    <button class="btn-ui focusable" onclick="togglePause()" id="ui-resume">ПРОДОЛЖИТЬ</button>
-    <button class="btn-ui focusable" style="background:#555; margin-top:20px; font-size:1rem;" onclick="resetProgress()" id="ui-reset">НОВАЯ ИГРА</button>
-</div>
-
-<div id="win-screen" class="overlay">
+<!-- ПОБЕДА -->
+<div id="screen-win" class="overlay">
     <div style="font-size: 5rem;">🎁</div>
-    <h2 id="ui-win-title" style="font-size: 2.5rem; color: #f1c40f;">ВЕРНО!</h2>
-    <p id="phrase-display" style="font-style: italic; opacity: 0.9; font-size: 1.3rem; margin-bottom: 30px;"></p>
-    <button class="btn-ui focusable" onclick="nextLevel()" id="ui-next-btn">ДАЛЕЕ</button>
+    <h2 id="win-quote-author" style="color: #f1c40f; margin-bottom: 10px;"></h2>
+    <p id="win-phrase" style="font-style: italic; opacity: 0.9; margin-bottom: 30px; max-width: 500px;"></p>
+    <button class="btn-main" onclick="nextLevel()">ДАЛЬШЕ</button>
 </div>
 
-<header>
-    <div class="logo">❄️ <span class="logo-text">КРИПТОГРАММА</span></div>
-    <div style="display:flex; gap:10px;">
-        <button class="icon-btn focusable" onclick="toggleSound()" id="sound-btn">🔊</button>
-        <button class="icon-btn focusable" onclick="togglePause()">⏸</button>
+<!-- ПРОИГРЫШ -->
+<div id="screen-fail" class="overlay" style="background: var(--primary);">
+    <h2 style="font-size: 4rem;">УПС!</h2>
+    <p>Жизни закончились. Цитата застыла во льду...</p>
+    <button class="btn-main" style="background: #fff; color: var(--primary);" onclick="location.reload()">В МЕНЮ</button>
+</div>
+
+<!-- ГЕЙМПЛЕЙ -->
+<header id="game-header" style="display: none;">
+    <div class="stats">
+        <span>⭐ <span id="ui-score">0</span></span>
+        <span class="lives" id="ui-lives">❤️❤️❤️</span>
     </div>
+    <button onclick="location.reload()" style="background:none; border:none; font-size: 1.5rem; cursor:pointer;">🏠</button>
 </header>
 
-<main>
+<main id="game-main" style="display: none;">
     <div id="puzzle-container"></div>
-    <div id="keyboard-wrapper">
-        <div id="keyboard-content"></div>
-        <div class="hints-bar">
-            <button class="hint-btn focusable" onclick="showHint('letter')">
-                <div id="ui-hint-1">ОТКРЫТЬ БУКВУ</div>
-                <span class="ui-ads">СМОТРЕТЬ РЕКЛАМУ</span>
-            </button>
-            <button class="hint-btn focusable" onclick="showHint('random')">
-                <div id="ui-hint-2">СЛУЧАЙНАЯ БУКВА</div>
-                <span class="ui-ads">СМОТРЕТЬ РЕКЛАМУ</span>
-            </button>
-        </div>
-    </div>
 </main>
 
+<div id="footer-ui" style="display: none;">
+    <div id="keyboard-area"></div>
+    <div class="hint-bar">
+        <button class="hint-btn" onclick="useHint()">ОТКРЫТЬ ЯЧЕЙКУ<br><b>(РЕКЛАМА)</b></button>
+        <button class="hint-btn" style="background:#7f8c8d" onclick="location.reload()">В МЕНЮ</button>
+    </div>
+</div>
+
 <script>
-    let sdk, phrase, charMap, numMap, solvedNums, selectedNum;
-    let lang = 'ru';
-    let isPaused = false;
-    let isMuted = false;
-    let isTV = false;
-    let focusIndex = 0;
-
-    // ПУНКТ 1.6.1.6 - Web Audio API
-    const AudioEngine = {
-        ctx: null, gainNode: null,
-        init() {
-            if (this.ctx) return;
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            this.gainNode = this.ctx.createGain();
-            this.gainNode.connect(this.ctx.destination);
-        },
-        play(freq) {
-            if (!this.ctx || isMuted || isPaused) return;
-            const osc = this.ctx.createOscillator();
-            const g = this.ctx.createGain();
-            osc.connect(g); g.connect(this.gainNode);
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
-            osc.start(); osc.stop(this.ctx.currentTime + 0.2);
-        },
-        suspend() { if (this.ctx) this.ctx.suspend(); },
-        resume() { if (this.ctx) this.ctx.resume(); }
+    /** КОНСТАНТЫ И БИБЛИОТЕКА **/
+    const lib = [
+        {q: "ВООБРАЖЕНИЕ ВАЖНЕЕ ЗНАНИЙ", a: "АЛЬБЕРТ ЭЙНШТЕЙН"},
+        {q: "ЖИЗНЬ ЭТО ТО ЧТО СЛУЧАЕТСЯ ПОКА ВЫ СТРОИТЕ ПЛАНЫ", a: "ДЖОН ЛЕННОН"},
+        {q: "Я ДУМАЮ СЛЕДОВАТЕЛЬНО Я СУЩЕСТВУЮ", a: "РЕНЕ ДЕКАРТ"},
+        {q: "В СОВЕРШЕНСТВЕ НЕТ НИЧЕГО МАЛЕНЬКОГО", a: "МИКЕЛАНДЖЕЛО"},
+        {q: "ПОБЕЖДАЕТ ТОТ КТО УМЕЕТ ЖДАТЬ", a: "КУТУЗОВ"},
+        {q: "ЕДИНСТВЕННЫЙ СПОСОБ ДЕЛАТЬ ВЕЛИКИЕ ВЕЩИ ЭТО ЛЮБИТЬ СВОЕ ДЕЛО", a: "СТИВ ДЖОБС"}
+    ];
+    const layouts = {
+        ru: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЁ"],
+        en: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
     };
 
-    const translations = {
-        ru: {
-            logo: "КРИПТОГРАММА", wish: "С НОВЫМ 2026 ГОДОМ!", play: "ИГРАТЬ", resume: "ПРОДОЛЖИТЬ", pause: "ПАУЗА",
-            reset: "НОВАЯ ИГРА", hint1: "ОТКРЫТЬ БУКВУ", hint2: "СЛУЧАЙНАЯ БУКВА", ads: "СМОТРЕТЬ РЕКЛАМУ ЗА ПОДСКАЗКУ",
-            win: "ПОБЕДА!", next: "ДАЛЕЕ", kbdRows: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЁ"],
-            phrases: ["С НОВЫМ ГОДОМ", "ЗИМНЯЯ СКАЗКА", "МОРОЗ И СОЛНЦЕ", "ВРЕМЯ ПОДАРКОВ", "ПУСТЬ СБЫВАЮТСЯ МЕЧТЫ"]
-        },
-        en: {
-            logo: "CRYPTOGRAM", wish: "HAPPY NEW YEAR 2026!", play: "PLAY", resume: "RESUME", pause: "PAUSE",
-            reset: "NEW GAME", hint1: "OPEN LETTER", hint2: "RANDOM LETTER", ads: "WATCH AD FOR A HINT",
-            win: "WELL DONE!", next: "NEXT", kbdRows: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"],
-            phrases: ["HAPPY NEW YEAR", "WINTER WONDERLAND", "LET IT SNOW", "FROSTY MORNING", "GIFT TIME"]
-        }
-    };
+    let sdk, puzzleData = [], charMap = {}, numMap = {}, phraseObj;
+    let selectedIdx = 0, score = 0, record = 0, lives = 3, lang = 'ru';
 
-    // ПУНКТ 1.19.1 - Инициализация SDK
+    /** ИНИЦИАЛИЗАЦИЯ SDK **/
     if (typeof YaGames !== 'undefined') {
         YaGames.init().then(ysdk => {
             sdk = ysdk;
             lang = sdk.environment.i18n.lang.startsWith('ru') ? 'ru' : 'en';
-            isTV = sdk.deviceInfo.type === 'tv';
-            applyLocalization();
-            if (sdk.features && sdk.features.LoadingAPI) sdk.features.LoadingAPI.ready(); // ПУНКТ 1.19.2
-            if (isTV) initTV();
+            if (sdk.deviceInfo.type === 'tv') document.body.classList.add('is-tv');
+            record = localStorage.getItem('cry_top_2026') || 0;
+            document.getElementById('ui-record').innerText = record;
+            if (sdk.features?.LoadingAPI) sdk.features.LoadingAPI.ready();
         });
     }
 
-    // ПУНКТ 1.9 - Механика сохранения
-    function saveProgress() {
-        const data = { phrase, charMap, numMap, solvedNums };
-        localStorage.setItem('cryptogram_save_v2', JSON.stringify(data));
-    }
-
-    function loadProgress() {
-        const saved = localStorage.getItem('cryptogram_save_v2');
-        if (saved) {
-            const data = JSON.parse(saved);
-            phrase = data.phrase; charMap = data.charMap;
-            numMap = data.numMap; solvedNums = data.solvedNums;
-            return true;
-        }
-        return false;
-    }
-
-    function resetProgress() {
-        localStorage.removeItem('cryptogram_save_v2');
-        location.reload();
-    }
-
+    /** ЛОГИКА ИГРЫ **/
     function startGame() {
-        AudioEngine.init();
-        document.getElementById('menu-screen').style.display = 'none';
-        if (!loadProgress()) startNewLevel();
-        else { renderBoard(); renderKeyboard(); }
+        document.getElementById('screen-menu').style.display = 'none';
+        document.getElementById('game-header').style.display = 'flex';
+        document.getElementById('game-main').style.display = 'flex';
+        document.getElementById('footer-ui').style.display = 'block';
+        initLevel();
     }
 
-    // ТВ Навигация (п. 1.6.3.2)
-    function initTV() {
-        document.addEventListener('keydown', (e) => {
-            const items = Array.from(document.querySelectorAll('.focusable:not([style*="display: none"])'));
-            if (e.key === 'ArrowRight') focusIndex = (focusIndex + 1) % items.length;
-            if (e.key === 'ArrowLeft') focusIndex = (focusIndex - 1 + items.length) % items.length;
-            if (e.key === 'Enter') items[focusIndex].click();
-            if (e.key === 'Escape') togglePause();
-            updateFocus();
-        });
-    }
-    function updateFocus() {
-        document.querySelectorAll('.tv-focus').forEach(el => el.classList.remove('tv-focus'));
-        const items = Array.from(document.querySelectorAll('.focusable'));
-        if (items[focusIndex]) items[focusIndex].classList.add('tv-focus');
-    }
-
-    function applyLocalization() {
-        const t = translations[lang];
-        document.querySelectorAll('.logo-text').forEach(el => el.innerText = t.logo);
-        document.getElementById('ui-holiday').innerText = t.wish;
-        document.getElementById('ui-play').innerText = t.play;
-        document.getElementById('ui-resume').innerText = t.resume;
-        document.getElementById('ui-reset').innerText = t.reset;
-        document.getElementById('ui-hint-1').innerText = t.hint1;
-        document.getElementById('ui-hint-2').innerText = t.hint2;
-        document.querySelectorAll('.ui-ads').forEach(el => el.innerText = t.ads);
-        document.getElementById('ui-win-title').innerText = t.win;
-        document.getElementById('ui-next-btn').innerText = t.next;
-    }
-
-    function startNewLevel() {
-        const t = translations[lang];
-        phrase = t.phrases[Math.floor(Math.random() * t.phrases.length)];
-        charMap = {}; numMap = {}; solvedNums = [];
-        const unique = [...new Set(phrase.replace(/\s/g, '').split(''))];
-        const nums = Array.from({length: 40}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+    function initLevel() {
+        lives = 3; score = 0;
+        const currentLib = lib; // Можно расширить под разные языки
+        phraseObj = currentLib[Math.floor(Math.random() * currentLib.length)];
+        
+        charMap = {}; numMap = {}; puzzleData = [];
+        const full = (phraseObj.q + phraseObj.a).replace(/\s/g, '');
+        const unique = [...new Set(full.split(''))];
+        const nums = Array.from({length: 60}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
         unique.forEach((l, i) => { charMap[l] = nums[i]; numMap[nums[i]] = l; });
-        unique.sort(() => Math.random() - 0.5).slice(0, 3).forEach(l => solvedNums.push(charMap[l]));
-        renderBoard(); renderKeyboard(); saveProgress();
+
+        // Построение
+        [...phraseObj.q].forEach(c => addC(c));
+        puzzleData.push({ isDiv: true });
+        [...phraseObj.a].forEach(c => addC(c));
+
+        // Автооткрытие 2 случайных букв (традиция жанра)
+        const auto = unique.sort(() => Math.random() - 0.5).slice(0, 2);
+        puzzleData.forEach(p => { if(!p.isSpace && !p.isDiv && auto.includes(p.correct)) p.user = p.correct; });
+
+        autoSelectNext(0);
+        updateUI();
+    }
+
+    function addC(c) {
+        if (c === ' ') puzzleData.push({ isSpace: true });
+        else puzzleData.push({ correct: c, num: charMap[c], user: '' });
+    }
+
+    function updateUI() {
+        renderBoard();
+        renderKeyboard();
+        document.getElementById('ui-score').innerText = score;
+        document.getElementById('ui-lives').innerText = "❤️".repeat(lives);
+        if(score > record) { record = score; localStorage.setItem('cry_top_2026', record); }
+        checkWin();
     }
 
     function renderBoard() {
-        const container = document.getElementById('puzzle-container');
-        container.innerHTML = '';
-        phrase.split(' ').forEach(word => {
-            const wordDiv = document.createElement('div'); wordDiv.className = 'word';
-            [...word].forEach(char => {
-                const n = charMap[char]; const isSolved = solvedNums.includes(n);
-                const cell = document.createElement('div');
-                cell.className = `cell focusable num-${n} ${isSolved ? 'correct' : ''}`;
-                cell.innerHTML = `<div class="letter-box">${isSolved ? char : ''}</div><div class="num-label">${n}</div>`;
-                cell.onclick = () => selectCell(n);
-                wordDiv.appendChild(cell);
-            });
-            container.appendChild(wordDiv);
+        const cont = document.getElementById('puzzle-container');
+        cont.innerHTML = '';
+        let row = createRow();
+
+        puzzleData.forEach((p, i) => {
+            if (p.isDiv) {
+                cont.appendChild(row);
+                const d = document.createElement('div'); d.className = 'author-box';
+                cont.appendChild(d); row = d; return;
+            }
+            if (p.isSpace) { cont.appendChild(row); row = createRow(); return; }
+
+            const cell = document.createElement('div');
+            cell.className = `cell ${i === selectedIdx ? 'selected' : ''}`;
+            if (p.user === p.correct) cell.classList.add('correct-cell');
+            cell.innerHTML = `<div class="letter-box">${p.user}</div><div class="num-label">${p.num}</div>`;
+            cell.onclick = () => { selectedIdx = i; updateUI(); };
+            row.appendChild(cell);
         });
+        cont.appendChild(row);
+
+        const sel = cont.querySelector('.selected');
+        if (sel) sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function renderKeyboard() {
-        const kbd = document.getElementById('keyboard-content'); kbd.innerHTML = '';
-        translations[lang].kbdRows.forEach(row => {
-            const rowDiv = document.createElement('div'); rowDiv.className = 'kbd-row';
-            row.split('').forEach(l => {
-                const key = document.createElement('div'); key.className = 'key focusable';
-                key.innerText = l; key.onclick = () => handleInput(l);
-                rowDiv.appendChild(key);
+        const cont = document.getElementById('keyboard-area'); cont.innerHTML = '';
+        layouts[lang].forEach(rowStr => {
+            const div = document.createElement('div'); div.className = 'kbd-row';
+            rowStr.split('').forEach(l => {
+                const k = document.createElement('div');
+                k.className = 'key';
+                if (isLetterFinished(l)) k.classList.add('finished');
+                k.innerText = l;
+                k.onclick = () => handleInput(l);
+                div.appendChild(k);
             });
-            kbd.appendChild(rowDiv);
+            cont.appendChild(div);
         });
     }
 
-    function selectCell(n) {
-        if (isPaused || solvedNums.includes(n)) return;
-        selectedNum = n;
-        document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-        document.querySelectorAll(`.num-${n}`).forEach(c => c.classList.add('selected'));
-    }
+    function createRow() { const d = document.createElement('div'); d.className = 'word'; return d; }
 
-    function handleInput(key) {
-        if (isPaused || !selectedNum) return;
-        const correct = numMap[selectedNum];
-        if (key === correct) {
-            AudioEngine.play(880); solvedNums.push(selectedNum);
-            document.querySelectorAll(`.num-${selectedNum}`).forEach(c => {
-                c.querySelector('.letter-box').innerText = key;
-                c.classList.add('correct');
-            });
-            selectedNum = null; saveProgress(); checkWin();
+    function handleInput(l) {
+        if (lives <= 0) return;
+        const data = puzzleData[selectedIdx];
+        if (!data || data.isDiv || data.isSpace) return;
+
+        if (l === data.correct) {
+            data.user = l; score += 10;
+            autoSelectNext(selectedIdx + 1);
         } else {
-            AudioEngine.play(150);
-            document.querySelectorAll(`.num-${selectedNum}`).forEach(c => {
-                c.classList.add('error'); setTimeout(() => c.classList.remove('error'), 300);
-            });
-        }
-    }
-
-    function showHint(type) {
-        if (isPaused) return;
-        if (!sdk) { executeHint(type); return; }
-        AudioEngine.suspend();
-        sdk.adv.showRewardedVideo({
-            callbacks: {
-                onRewarded: () => executeHint(type),
-                onClose: () => AudioEngine.resume()
+            lives--;
+            const cells = document.querySelectorAll('.cell');
+            // Находим нужный индекс ячейки в DOM (минуя пробелы/дивайдеры)
+            let vIdx = 0;
+            for(let i=0; i<selectedIdx; i++) if(!puzzleData[i].isSpace && !puzzleData[i].isDiv) vIdx++;
+            if (cells[vIdx]) {
+                cells[vIdx].classList.add('error-cell');
+                setTimeout(updateUI, 300);
             }
-        });
+            if (lives === 0) document.getElementById('screen-fail').style.display = 'flex';
+        }
+        updateUI();
     }
 
-    function executeHint(type) {
-        let n = (type === 'letter' && selectedNum) ? selectedNum : null;
-        if (!n) {
-            const rem = Object.keys(numMap).map(Number).filter(x => !solvedNums.includes(x));
-            n = rem[Math.floor(Math.random() * rem.length)];
+    function autoSelectNext(start) {
+        for (let i = start; i < puzzleData.length; i++) {
+            if (!puzzleData[i].isSpace && !puzzleData[i].isDiv && !puzzleData[i].user) {
+                selectedIdx = i; return;
+            }
         }
-        if (n) { selectedNum = n; handleInput(numMap[n]); }
+    }
+
+    function isLetterFinished(l) {
+        const matches = puzzleData.filter(p => p.correct === l);
+        return matches.length > 0 && matches.every(p => p.user === l);
+    }
+
+    /** РЕКЛАМА И ПОДСКАЗКИ (п. 4.5.1) **/
+    function useHint() {
+        if (!sdk) { execHint(); return; }
+        sdk.adv.showRewardedVideo({ callbacks: { onRewarded: execHint } });
+    }
+
+    function execHint() {
+        const p = puzzleData[selectedIdx];
+        if (p && !p.isSpace && !p.isDiv) {
+            p.user = p.correct;
+            score += 5;
+            autoSelectNext(selectedIdx + 1);
+            updateUI();
+        }
     }
 
     function checkWin() {
-        const letters = phrase.replace(/\s/g, '');
-        if ([...letters].every(l => solvedNums.includes(charMap[l]))) {
-            localStorage.removeItem('cryptogram_save_v2');
-            setTimeout(() => {
-                document.getElementById('phrase-display').innerText = `"${phrase}"`;
-                document.getElementById('win-screen').style.display = 'flex';
-            }, 600);
+        if (puzzleData.length > 0 && puzzleData.every(p => p.isSpace || p.isDiv || p.user === p.correct)) {
+            document.getElementById('win-quote-author').innerText = "— " + phraseObj.a;
+            document.getElementById('win-phrase').innerText = phraseObj.q;
+            document.getElementById('screen-win').style.display = 'flex';
         }
     }
 
     function nextLevel() {
-        document.getElementById('win-screen').style.display = 'none';
-        if (sdk) sdk.adv.showFullscreenAdv({ callbacks: { onClose: () => startNewLevel() } });
-        else startNewLevel();
+        document.getElementById('screen-win').style.display = 'none';
+        if (sdk) sdk.adv.showFullscreenAdv({ callbacks: { onClose: initLevel } });
+        else initLevel();
     }
 
-    function togglePause() { isPaused = !isPaused; document.getElementById('pause-screen').style.display = isPaused ? 'flex' : 'none'; }
-    function toggleSound() { isMuted = !isMuted; document.getElementById('sound-btn').innerText = isMuted ? '🔇' : '🔊'; }
+    /** ОБРАБОТЧИКИ КЛАВИАТУРЫ (п. 1.6.2.4) **/
+    window.addEventListener('keydown', (e) => {
+        const k = e.key.toUpperCase();
+        if (layouts[lang].join('').includes(k)) handleInput(k);
+        // Обработка ТВ-пульта (упрощенная)
+        if (e.key === 'Backspace') location.reload();
+    });
 
-    setInterval(() => {
-        if (isPaused || document.hidden) return;
-        const snow = document.getElementById('snow-container');
+    /** СНЕЖИНКИ (ЭКОНОМНЫЕ) **/
+    const snowCont = document.getElementById('snow-container');
+    for (let i = 0; i < 20; i++) {
         const sf = document.createElement('div');
         sf.className = 'snowflake'; sf.innerText = '❄';
         sf.style.left = Math.random() * 100 + 'vw';
-        sf.style.animationDuration = (Math.random() * 3 + 2) + 's';
-        snow.appendChild(sf);
-        setTimeout(() => sf.remove(), 5000);
-    }, 250);
+        sf.style.animationDuration = (Math.random() * 5 + 5) + 's';
+        sf.style.animationDelay = (Math.random() * 5) + 's';
+        snowCont.appendChild(sf);
+    }
 </script>
 </body>
 </html>
