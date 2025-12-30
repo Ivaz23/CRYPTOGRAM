@@ -3,13 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#d6e4f0">
-    <meta name="msapplication-tap-highlight" content="no">
     <title>Криптограмма: Зимние Тайны</title>
-    <!-- SDK Yandex Games -->
     <script src="https://yandex.ru/games/sdk/v2"></script>
     <style>
         :root {
@@ -20,11 +14,10 @@
             --error: #e74c3c;
             --text: #2c3e50;
             --border: #d1d5db;
-            --hint-color: #2980b9;
-            --tv-focus: #f1c40f;
+            --hint: #2980b9;
         }
 
-        /* ТЕХНИЧЕСКИЕ ПРАВКИ (Защита от выделения и меню - п. 1.6.2.7) */
+        /* Полная блокировка системных действий (п. 1.6.1.8, 1.6.2.7) */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent;
@@ -34,362 +27,111 @@
             outline: none;
         }
 
+        /* Запрет скролла всей страницы (п. 1.10.1) */
         html, body {
-            margin: 0; padding: 0; height: 100%; width: 100%;
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%;
+            height: -webkit-fill-available;
+            overflow: hidden; 
             background-color: var(--bg-color);
-            overscroll-behavior: none; /* Блокировка swipe-to-refresh iOS */
+            overscroll-behavior: none;
         }
 
         body {
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex; flex-direction: column;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 5 L38 22 L32 22 L45 38 L35 38 L35 50 L25 50 L25 38 L15 38 L28 22 L22 22 Z' fill='%2327ae60' fill-opacity='0.08'/%3E%3C/svg%3E");
+            display: flex; 
+            flex-direction: column;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 5 L38 22 L32 22 L45 38 L35 38 L35 50 L25 50 L25 38 L15 38 L28 22 L22 22 Z' fill='%2327ae60' fill-opacity='0.1'/%3E%3C/svg%3E");
             background-attachment: fixed;
-            overflow-x: hidden; /* Предотвращение горизонтального скроллинга */
-            max-width: 100vw;
-            box-sizing: border-box;
         }
 
-        #snow-container { position: fixed; inset: 0; pointer-events: none; z-index: 100; overflow: hidden; }
-        .snowflake { position: absolute; top: -20px; color: white; opacity: 0.6; animation: fall linear infinite; }
-        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+        #snow-container { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+        .snowflake { position: absolute; top: -10px; color: white; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(105vh) rotate(360deg); } }
 
-        /* ИНТЕРФЕЙС ШАПКИ */
+        /* HEADER - Фиксированная высота */
         header {
-            height: 60px; background: #fff; display: flex; justify-content: space-between;
-            align-items: center; padding: 0 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 11; flex-shrink: 0;
-            padding-top: env(safe-area-inset-top);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            height: 50px; background: #fff;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100; flex-shrink: 0;
         }
-        .stats { display: flex; gap: 20px; font-weight: 900; }
-        .lives { color: var(--error); letter-spacing: 2px; }
+        .stats { display: flex; gap: 15px; font-weight: 800; font-size: 0.85rem; }
+        .lives { color: var(--primary); letter-spacing: 1px; }
 
-        /* ИГРОВОЕ ПОЛЕ (АДАПТИВНЫЙ СКРОЛЛ - п. 1.10.1) */
+        /* ИГРОВОЕ ПОЛЕ - Гибкая высота (скроллится внутри) */
         main {
-            flex: 1; display: flex; flex-direction: column;
-            overflow-y: auto; overflow-x: hidden; padding: 15px;
+            flex: 1; /* Забирает всё пространство */
+            overflow-y: auto; 
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 10px;
             scroll-behavior: smooth;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            -webkit-overflow-scrolling: touch;
         }
 
         #puzzle-container {
             display: flex; flex-wrap: wrap; justify-content: center;
-            align-content: flex-start; gap: 8px; width: 100%; margin-bottom: 40px;
-            max-width: 100%;
-            box-sizing: border-box;
+            align-content: flex-start; gap: 8px; width: 100%;
         }
 
-        .word { display: flex; gap: 5px; margin-right: 18px; margin-bottom: 25px; }
-        .author-box { 
-            border-top: 2px dashed #95a5a6; padding-top: 25px; margin-top: 10px; 
-            width: 100%; display: flex; justify-content: center; flex-wrap: wrap; 
-        }
+        .word { display: flex; gap: 4px; margin-right: 15px; margin-bottom: 22px; }
+        .author-div { border-top: 2px dashed #95a5a6; padding-top: 15px; margin-top: 10px; width: 100%; display: flex; justify-content: center; flex-wrap: wrap; }
 
         .cell { 
-            width: clamp(35px, 8.5vw, 55px); display: flex; flex-direction: column; 
-            align-items: center; cursor: pointer; transition: transform 0.15s;
+            width: clamp(34px, 8.5vw, 48px); display: flex; flex-direction: column; 
+            align-items: center; cursor: pointer; transition: transform 0.1s;
         }
-        .letter-box {
-            width: 100%; aspect-ratio: 1/1.15; background: var(--card);
+        .box {
+            width: 100%; aspect-ratio: 1/1.1; background: var(--card);
             border: 2px solid var(--border); border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: clamp(1.2rem, 5vw, 1.8rem); font-weight: 900; box-shadow: 0 4px 0 #bdc3c7;
+            font-size: clamp(1rem, 5.5vw, 1.6rem); font-weight: 900;
         }
-        .num-label { margin-top: 5px; font-size: 0.75rem; color: #555; font-weight: 900; }
+        .num { margin-top: 4px; font-size: 0.65rem; color: #555; font-weight: 900; }
 
-        /* ПОДСВЕТКА И ТВ ФОКУС */
-        .cell.selected .letter-box { border-color: var(--primary); background: #fff; transform: translateY(-4px); box-shadow: 0 6px 12px rgba(192,57,43,0.3); }
-        .cell.correct-cell .letter-box { color: var(--correct); border-color: var(--correct); box-shadow: 0 4px 0 rgba(46,204,113,0.2); }
-        .cell.error-cell .letter-box { color: var(--error); border-color: var(--error); animation: shake 0.3s; }
-        .tv-focused { border: 4px solid var(--tv-focus) !important; transform: scale(1.1); }
+        .cell.sel .box { border-color: var(--primary); background: #fff; transform: scale(1.05); box-shadow: 0 0 10px rgba(192,57,43,0.3); }
+        .cell.ok .box { color: var(--correct); border-color: var(--correct); }
+        .cell.bad .box { color: var(--error); border-color: var(--error); animation: sh 0.3s; }
 
-        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+        @keyframes sh { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
 
-        /* КЛАВИАТУРА */
-        #footer-ui {
-            flex-shrink: 0; background: rgba(255, 255, 255, 0.95);
-            padding: 10px 10px env(safe-area-inset-bottom);
-            border-top: 1px solid #ddd; width: 100%; max-width: 800px; margin: 0 auto;
-            border-radius: 20px 20px 0 0; z-index: 11;
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+        /* КЛАВИАТУРА И УПРАВЛЕНИЕ - Прижато к низу, фиксировано */
+        #footer {
+            flex-shrink: 0; background: rgba(255,255,255,0.95);
+            padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+            border-radius: 20px 20px 0 0; width: 100%; max-width: 600px;
+            margin: 0 auto; box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
+            z-index: 100;
         }
-        .kbd-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 6px; }
+
+        .kbd-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 5px; }
         .key {
-            background: #fff; height: clamp(45px, 8vh, 60px); flex: 1; border-radius: 8px;
+            background: #fff; height: clamp(40px, 7vh, 52px); flex: 1; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: clamp(0.9rem, 4vw, 1.3rem);
-            cursor: pointer; border: 1px solid #ddd; box-shadow: 0 3px 0 #ccc;
+            font-weight: 900; font-size: clamp(0.8rem, 4vw, 1.2rem);
+            cursor: pointer; border: 1px solid #ddd; box-shadow: 0 2px 0 #ccc;
         }
-        .key:active { transform: translateY(2px); box-shadow: none; }
-        .key.finished { opacity: 0.2; background: #eee; pointer-events: none; }
+        .key:active { transform: translateY(1px); box-shadow: none; }
+        .key.faded { opacity: 0.1; pointer-events: none; }
 
-        .hint-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .hint-btn { 
-            background: var(--hint-color); color: #fff; border: none; padding: 14px; 
-            border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.7rem;
-        }
+        .hint-btn { background: var(--hint); color: #fff; border: none; padding: 10px; border-radius: 12px; font-weight: 900; cursor: pointer; text-align: center; width: 100%; font-size: 10px; margin-top: 5px;}
 
         /* ЭКРАНЫ */
-        .overlay {
-            position: fixed; inset: 0; z-index: 200; display: none;
+        .ovl {
+            position: fixed; inset: 0; z-index: 500; display: none;
             flex-direction: column; align-items: center; justify-content: center;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white; padding: 40px; text-align: center;
+            color: white; padding: 30px; text-align: center;
         }
-        .btn-main { 
-            background: var(--correct); color: white; border: none; padding: 22px 60px; 
-            border-radius: 50px; font-size: 1.6rem; font-weight: 900; cursor: pointer; 
-            margin-top: 30px; box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
+        .btn { background: var(--correct); color: white; border: none; padding: 18px 50px; border-radius: 40px; font-size: 1.4rem; font-weight: 900; cursor: pointer; margin-top: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
 
-        /* ТВ СПЕЦИФИКАЦИЯ */
-        body.is-tv .cell, body.is-tv .key, body.is-tv .hint-btn { outline: none; }
-
-        /* ПЛАНШЕТЫ И БОЛЬШИЕ МОБИЛЬНЫЕ (max-width: 1024px) */
-        @media (max-width: 1024px) {
-            /* Улучшенные отступы для планшетов */
-            main {
-                padding: 20px 15px;
-            }
-            #puzzle-container {
-                gap: 10px;
-                margin-bottom: 45px;
-            }
-            .word {
-                gap: 6px;
-                margin-bottom: 28px;
-            }
-        }
-
-        /* СРЕДНИЕ МОБИЛЬНЫЕ УСТРОЙСТВА (max-width: 768px) */
-        @media (max-width: 768px) {
-            /* Увеличенные ячейки для лучшей читаемости */
-            .cell {
-                width: clamp(45px, 12vw, 65px);
-            }
-            .letter-box {
-                font-size: clamp(1.5rem, 6vw, 2.2rem);
-                border-radius: 10px;
-                box-shadow: 0 6px 0 #bdc3c7;
-            }
-            .num-label {
-                font-size: 0.85rem;
-                margin-top: 8px;
-            }
-
-            /* Улучшенные отступы */
-            main {
-                padding: 20px 12px;
-            }
-            #puzzle-container {
-                gap: 12px;
-                margin-bottom: 50px;
-                max-width: 100%;
-                overflow-x: auto;
-            }
-            .word {
-                margin-right: 20px;
-                margin-bottom: 30px;
-                gap: 8px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .author-box {
-                padding-top: 30px;
-                margin-top: 15px;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            /* Адаптивная клавиатура */
-            .key {
-                height: clamp(32px, 6vh, 32px);
-                font-size: clamp(0.85rem, 3.2vw, 1.1rem);
-                border-radius: 8px;
-                min-width: 24px;
-            }
-            .kbd-row {
-                gap: 1px;
-                margin-bottom: 3px;
-                flex-wrap: wrap;
-            }
-
-            /* Кнопки подсказок */
-            .hint-btn {
-                padding: 12px 8px;
-                font-size: 0.7rem;
-                border-radius: 12px;
-                white-space: nowrap;
-            }
-            .hint-bar {
-                gap: 8px;
-                margin-top: 15px;
-            }
-
-            /* Заголовок */
-            header {
-                height: 70px;
-                padding: 0 15px;
-            }
-            .stats {
-                gap: 20px;
-                font-size: 1rem;
-                flex-wrap: wrap;
-            }
-
-            /* Экраны победы/поражения */
-            .overlay {
-                padding: 20px;
-            }
-            .btn-main {
-                padding: 18px 40px;
-                font-size: 1.4rem;
-                margin-top: 25px;
-            }
-        }
-
-        /* МАЛЕНЬКИЕ ЭКРАНЫ (max-width: 480px) */
-        @media (max-width: 480px) {
-            .cell {
-                width: clamp(50px, 15vw, 70px);
-            }
-            .letter-box {
-                font-size: clamp(1.8rem, 7.5vw, 2.5rem);
-                border-radius: 12px;
-            }
-            .num-label {
-                font-size: 0.9rem;
-                margin-top: 10px;
-            }
-
-            .key {
-                height: clamp(28px, 7vh, 36px);
-                font-size: clamp(0.9rem, 3.8vw, 1.2rem);
-                border-radius: 10px;
-            }
-
-            main {
-                padding: 15px 8px;
-            }
-            #puzzle-container {
-                gap: 8px;
-                margin-bottom: 40px;
-            }
-            .word {
-                gap: 6px;
-                margin-bottom: 25px;
-                margin-right: 15px;
-            }
-            .author-box {
-                padding-top: 25px;
-                margin-top: 10px;
-            }
-
-            /* Клавиатура для маленьких экранов */
-            .kbd-row {
-                gap: 1px;
-                margin-bottom: 3px;
-            }
-            .hint-bar {
-                gap: 6px;
-                margin-top: 12px;
-            }
-            .hint-btn {
-                padding: 12px 6px;
-                font-size: 0.65rem;
-            }
-
-            /* Заголовок для маленьких экранов */
-            header {
-                height: 65px;
-                padding: 0 10px;
-            }
-            .stats {
-                gap: 15px;
-                font-size: 0.95rem;
-            }
-
-            /* Экраны */
-            .overlay {
-                padding: 15px;
-            }
-            .btn-main {
-                padding: 16px 35px;
-                font-size: 1.3rem;
-            }
-        }
-
-        /* ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ (max-width: 360px) */
-        @media (max-width: 360px) {
-            .cell {
-                width: clamp(45px, 16vw, 65px);
-            }
-            .letter-box {
-                font-size: clamp(1.6rem, 8vw, 2.3rem);
-            }
-
-            .key {
-                height: clamp(26px, 6.5vh, 32px);
-                font-size: clamp(0.85rem, 3.8vw, 1.05rem);
-            }
-
-            main {
-                padding: 10px 5px;
-            }
-            #puzzle-container {
-                gap: 6px;
-                margin-bottom: 35px;
-            }
-            .word {
-                gap: 4px;
-                margin-bottom: 20px;
-                margin-right: 10px;
-            }
-
-            header {
-                height: 60px;
-                padding: 0 8px;
-            }
-            .stats {
-                gap: 10px;
-                font-size: 0.9rem;
-            }
-
-            .kbd-row {
-                gap: 1px;
-                margin-bottom: 2px;
-            }
-            .hint-bar {
-                gap: 3px;
-                margin-top: 8px;
-            }
-            .hint-btn {
-                padding: 10px 4px;
-                font-size: 0.6rem;
-            }
-
-            .overlay {
-                padding: 10px;
-            }
-            .btn-main {
-                padding: 14px 30px;
-                font-size: 1.2rem;
-                margin-top: 20px;
-            }
-        }
-
-        /* ГОРИЗОНТАЛЬНЫЙ РЕЖИМ (Десктоп/Планшет) */
-        @media (orientation: landscape) and (min-height: 500px) {
+        @media (orientation: landscape) and (min-width: 700px) {
             body { flex-direction: row; }
-            header { position: absolute; width: 100%; top: 0; left: 0; }
-            main { padding-top: 80px; }
-            #footer-ui { width: 320px; border-radius: 20px; margin: auto 15px; border: none; height: fit-content; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+            header { position: absolute; top:0; width: 100%; }
+            main { padding-top: 60px; }
+            #footer { width: 320px; border-radius: 20px; margin: auto 15px; }
         }
     </style>
 </head>
@@ -397,255 +139,207 @@
 
 <div id="snow-container"></div>
 
-<!-- ГЛАВНОЕ МЕНЮ -->
-<div id="screen-menu" class="overlay" style="display: flex;">
-    <div style="font-size: 6rem; margin-bottom: 20px;">🎄</div>
+<!-- Экраны -->
+<div id="sc-menu" class="ovl" style="display: flex;">
+    <div style="font-size: 4rem;">❄️</div>
     <h1 style="font-size: 2.2rem; margin: 0;">КРИПТОГРАММА:<br>ЗИМНИЕ ТАЙНЫ</h1>
-    <div style="margin: 20px 0; font-size: 1.2rem; color: #f1c40f; font-weight: 900;">РЕКОРД: <span id="ui-record">0</span></div>
-    <button class="btn-main" onclick="startGame()">ИГРАТЬ</button>
+    <div style="margin: 15px 0; font-size: 1.1rem; color: #f1c40f; font-weight: 900;">🏆 РЕКОРД: <span id="ui-record">0</span></div>
+    <button class="btn" onclick="start()">ИГРАТЬ</button>
 </div>
 
-<!-- ПОБЕДА -->
-<div id="screen-win" class="overlay">
-    <div style="font-size: 5rem;">🎁</div>
-    <h2 id="win-quote-author" style="color: #f1c40f; margin-bottom: 10px;"></h2>
-    <p id="win-phrase" style="font-style: italic; opacity: 0.9; margin-bottom: 30px; max-width: 500px;"></p>
-    <button class="btn-main" onclick="nextLevel()">ДАЛЬШЕ</button>
+<div id="sc-fail" class="ovl" style="background: var(--primary);">
+    <h2 style="font-size: 3rem;">ПОПЫТКИ ЗАКОНЧИЛИСЬ</h2>
+    <button class="btn" style="background: #fff; color: var(--primary);" onclick="location.reload()">В МЕНЮ</button>
 </div>
 
-<!-- ПРОИГРЫШ -->
-<div id="screen-fail" class="overlay" style="background: var(--primary);">
-    <h2 style="font-size: 4rem;">УПС!</h2>
-    <p>Жизни закончились. Цитата застыла во льду...</p>
-    <button class="btn-main" style="background: #fff; color: var(--primary);" onclick="location.reload()">В МЕНЮ</button>
+<div id="sc-win" class="ovl">
+    <h2>РАЗГАДАНО!</h2>
+    <p id="ui-auth-name" style="color:#f1c40f; font-weight:900; font-size: 1.5rem;"></p>
+    <button class="btn" onclick="next()">ДАЛЕЕ</button>
 </div>
 
-<!-- ГЕЙМПЛЕЙ -->
-<header id="game-header" style="display: none;">
+<!-- Хедлер геймплея -->
+<header id="h-ui" style="display:none;">
     <div class="stats">
-        <span>⭐ <span id="ui-score">0</span></span>
-        <span class="lives" id="ui-lives">❤️❤️❤️</span>
+        <span>⭐ <span id="s-val">0</span></span>
+        <span class="lives" id="l-val">❤️❤️❤️</span>
     </div>
-    <button onclick="location.reload()" style="background:none; border:none; font-size: 1.5rem; cursor:pointer;">🏠</button>
+    <div style="font-size: 0.6rem; opacity: 0.5; font-weight: 900;">ЗИМНИЕ ТАЙНЫ</div>
+    <button onclick="location.reload()" style="background:none; border:none; font-size: 1.4rem; cursor:pointer;">🏠</button>
 </header>
 
-<main id="game-main" style="display: none;">
+<main id="m-ui" style="display:none;">
     <div id="puzzle-container"></div>
 </main>
 
-<div id="footer-ui" style="display: none;">
-    <div id="keyboard-area"></div>
-    <div class="hint-bar">
-        <button class="hint-btn" onclick="useHint()">ОТКРЫТЬ ЯЧЕЙКУ<br><b>(РЕКЛАМА)</b></button>
-        <button class="hint-btn" style="background:#7f8c8d" onclick="location.reload()">В МЕНЮ</button>
-    </div>
+<div id="f-ui" style="display:none;">
+    <div id="kbd"></div>
+    <button class="hint-btn" onclick="hint()">ОТКРЫТЬ ЭТУ ЯЧЕЙКУ (СМОТРЕТЬ РЕКЛАМУ)</button>
 </div>
 
 <script>
-    /** КОНСТАНТЫ И БИБЛИОТЕКА **/
-    const lib = [
+    const phrases = [
         {q: "ВООБРАЖЕНИЕ ВАЖНЕЕ ЗНАНИЙ", a: "АЛЬБЕРТ ЭЙНШТЕЙН"},
-        {q: "ЖИЗНЬ ЭТО ТО ЧТО СЛУЧАЕТСЯ ПОКА ВЫ СТРОИТЕ ПЛАНЫ", a: "ДЖОН ЛЕННОН"},
-        {q: "Я ДУМАЮ СЛЕДОВАТЕЛЬНО Я СУЩЕСТВУЮ", a: "РЕНЕ ДЕКАРТ"},
+        {q: "Я ДУМАЮ ЗНАЧИТ Я СУЩЕСТВУЮ", a: "РЕНЕ ДЕКАРТ"},
         {q: "В СОВЕРШЕНСТВЕ НЕТ НИЧЕГО МАЛЕНЬКОГО", a: "МИКЕЛАНДЖЕЛО"},
-        {q: "ПОБЕЖДАЕТ ТОТ КТО УМЕЕТ ЖДАТЬ", a: "КУТУЗОВ"},
-        {q: "ЕДИНСТВЕННЫЙ СПОСОБ ДЕЛАТЬ ВЕЛИКИЕ ВЕЩИ ЭТО ЛЮБИТЬ СВОЕ ДЕЛО", a: "СТИВ ДЖОБС"}
+        {q: "ЖИЗНЬ ЭТО ТО ЧТО СЛУЧАЕТСЯ ПОКА ВЫ СТРОИТЕ ПЛАНЫ", a: "ДЖОН ЛЕННОН"},
+        {q: "НИКОГДА НЕ ПРЕРЫВАЙТЕ ВРАГА КОГДА ОН ОШИБАЕТСЯ", a: "НАПОЛЕОН"}
     ];
     const layouts = {
         ru: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЁ"],
         en: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
     };
 
-    let sdk, puzzleData = [], charMap = {}, numMap = {}, phraseObj;
-    let selectedIdx = 0, score = 0, record = 0, lives = 3, lang = 'ru';
+    let sdk, p_obj, p_data = [], c_map = {}, selIdx = 0, score = 0, best = 0, lives = 3, lang = 'ru';
 
-    /** ИНИЦИАЛИЗАЦИЯ SDK **/
+    // Исправление высоты для мобилок (п. 1.10.1)
+    const fixH = () => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    window.addEventListener('resize', fixH); fixH();
+
+    // 1. SDK INIT
     if (typeof YaGames !== 'undefined') {
-        YaGames.init().then(ysdk => {
-            sdk = ysdk;
+        YaGames.init().then(y => {
+            sdk = y;
             lang = sdk.environment.i18n.lang.startsWith('ru') ? 'ru' : 'en';
-            if (sdk.deviceInfo.type === 'tv') document.body.classList.add('is-tv');
-            record = localStorage.getItem('cry_top_2026') || 0;
-            document.getElementById('ui-record').innerText = record;
             if (sdk.features?.LoadingAPI) sdk.features.LoadingAPI.ready();
+            best = localStorage.getItem('cry_best_z') || 0;
+            document.getElementById('ui-record').innerText = best;
         });
     }
 
-    /** ЛОГИКА ИГРЫ **/
-    function startGame() {
-        document.getElementById('screen-menu').style.display = 'none';
-        document.getElementById('game-header').style.display = 'flex';
-        document.getElementById('game-main').style.display = 'flex';
-        document.getElementById('footer-ui').style.display = 'block';
-        initLevel();
+    function start() {
+        document.getElementById('sc-menu').style.display = 'none';
+        document.getElementById('h-ui').style.display = 'flex';
+        document.getElementById('m-ui').style.display = 'flex';
+        document.getElementById('f-ui').style.display = 'block';
+        initLvl();
     }
 
-    function initLevel() {
+    function initLvl() {
         lives = 3; score = 0;
-        const currentLib = lib; // Можно расширить под разные языки
-        phraseObj = currentLib[Math.floor(Math.random() * currentLib.length)];
-        
-        charMap = {}; numMap = {}; puzzleData = [];
-        const full = (phraseObj.q + phraseObj.a).replace(/\s/g, '');
-        const unique = [...new Set(full.split(''))];
+        p_obj = phrases[Math.floor(Math.random() * phrases.length)];
+        p_data = []; c_map = {}; 
+        const full = (p_obj.q + p_obj.a).replace(/\s/g, '');
+        const uni = [...new Set(full.split(''))];
         const nums = Array.from({length: 60}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-        unique.forEach((l, i) => { charMap[l] = nums[i]; numMap[nums[i]] = l; });
+        uni.forEach((l, i) => c_map[l] = nums[i]);
 
-        // Построение
-        [...phraseObj.q].forEach(c => addC(c));
-        puzzleData.push({ isDiv: true });
-        [...phraseObj.a].forEach(c => addC(c));
+        [...p_obj.q].forEach(c => addC(c));
+        p_data.push({ isDiv: true });
+        [...p_obj.a].forEach(c => addC(c));
 
-        // Автооткрытие 2 случайных букв (традиция жанра)
-        const auto = unique.sort(() => Math.random() - 0.5).slice(0, 2);
-        puzzleData.forEach(p => { if(!p.isSpace && !p.isDiv && auto.includes(p.correct)) p.user = p.correct; });
+        // Автооткрытие 2х букв
+        const auto = uni.sort(() => Math.random() - 0.5).slice(0, 2);
+        p_data.forEach(p => { if(!p.isSp && !p.isDiv && auto.includes(p.corr)) p.usr = p.corr; });
 
-        autoSelectNext(0);
-        updateUI();
+        move(0); upd();
     }
 
     function addC(c) {
-        if (c === ' ') puzzleData.push({ isSpace: true });
-        else puzzleData.push({ correct: c, num: charMap[c], user: '' });
+        if (c === ' ') p_data.push({ isSp: true });
+        else p_data.push({ corr: c, num: c_map[c], usr: '' });
     }
 
-    function updateUI() {
-        renderBoard();
-        renderKeyboard();
-        document.getElementById('ui-score').innerText = score;
-        document.getElementById('ui-lives').innerText = "❤️".repeat(lives);
-        if(score > record) { record = score; localStorage.setItem('cry_top_2026', record); }
-        checkWin();
-    }
-
-    function renderBoard() {
-        const cont = document.getElementById('puzzle-container');
-        cont.innerHTML = '';
-        let row = createRow();
-
-        puzzleData.forEach((p, i) => {
+    function upd() {
+        const cont = document.getElementById('puzzle-container'); cont.innerHTML = '';
+        let row = docR();
+        p_data.forEach((p, i) => {
             if (p.isDiv) {
-                cont.appendChild(row);
-                const d = document.createElement('div'); d.className = 'author-box';
+                cont.appendChild(row); 
+                const d = document.createElement('div'); d.className = 'author-div';
                 cont.appendChild(d); row = d; return;
             }
-            if (p.isSpace) { cont.appendChild(row); row = createRow(); return; }
-
+            if (p.isSp) { cont.appendChild(row); row = docR(); return; }
             const cell = document.createElement('div');
-            cell.className = `cell ${i === selectedIdx ? 'selected' : ''}`;
-            if (p.user === p.correct) cell.classList.add('correct-cell');
-            cell.innerHTML = `<div class="letter-box">${p.user}</div><div class="num-label">${p.num}</div>`;
-            cell.onclick = () => { selectedIdx = i; updateUI(); };
+            cell.className = `cell ${i === selIdx ? 'sel' : ''} ${p.usr === p.corr ? 'ok' : ''}`;
+            cell.innerHTML = `<div class="box">${p.usr}</div><div class="num">${p.num}</div>`;
+            cell.onclick = () => { selIdx = i; upd(); };
             row.appendChild(cell);
         });
         cont.appendChild(row);
 
-        const sel = cont.querySelector('.selected');
-        if (sel) sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    function renderKeyboard() {
-        const cont = document.getElementById('keyboard-area'); cont.innerHTML = '';
-        layouts[lang].forEach(rowStr => {
+        const kArea = document.getElementById('kbd'); kArea.innerHTML = '';
+        layouts[lang].forEach(rStr => {
             const div = document.createElement('div'); div.className = 'kbd-row';
-            rowStr.split('').forEach(l => {
-                const k = document.createElement('div');
-                k.className = 'key';
-                if (isLetterFinished(l)) k.classList.add('finished');
-                k.innerText = l;
-                k.onclick = () => handleInput(l);
+            rStr.split('').forEach(l => {
+                const k = document.createElement('div'); k.className = 'key';
+                if (isFin(l)) k.classList.add('faded');
+                k.innerText = l; k.onclick = () => tap(l);
                 div.appendChild(k);
             });
-            cont.appendChild(div);
+            kArea.appendChild(div);
         });
+
+        document.getElementById('l-val').innerText = "❤️".repeat(lives);
+        document.getElementById('s-val').innerText = score;
+        if(score > best) { best = score; localStorage.setItem('cry_best_z', best); }
+        win();
     }
 
-    function createRow() { const d = document.createElement('div'); d.className = 'word'; return d; }
+    function isFin(l) {
+        const pool = p_data.filter(p => p.corr === l);
+        return pool.length > 0 && pool.every(p => p.usr === l);
+    }
 
-    function handleInput(l) {
-        if (lives <= 0) return;
-        const data = puzzleData[selectedIdx];
-        if (!data || data.isDiv || data.isSpace) return;
-
-        if (l === data.correct) {
-            data.user = l; score += 10;
-            autoSelectNext(selectedIdx + 1);
-        } else {
-            lives--;
+    function tap(l) {
+        const data = p_data[selIdx];
+        if(!data || data.usr) return;
+        if (l === data.corr) { data.usr = l; score += 10; move(selIdx + 1); }
+        else {
+            lives--; 
             const cells = document.querySelectorAll('.cell');
-            // Находим нужный индекс ячейки в DOM (минуя пробелы/дивайдеры)
-            let vIdx = 0;
-            for(let i=0; i<selectedIdx; i++) if(!puzzleData[i].isSpace && !puzzleData[i].isDiv) vIdx++;
-            if (cells[vIdx]) {
-                cells[vIdx].classList.add('error-cell');
-                setTimeout(updateUI, 300);
-            }
-            if (lives === 0) document.getElementById('screen-fail').style.display = 'flex';
+            let v = 0; for(let i=0; i<selIdx; i++) if(!p_data[i].isSp && !p_data[i].isDiv) v++;
+            if(cells[v]) { cells[v].classList.add('bad'); setTimeout(upd, 300); }
+            if (lives <= 0) document.getElementById('sc-fail').style.display = 'flex';
         }
-        updateUI();
+        upd();
     }
 
-    function autoSelectNext(start) {
-        for (let i = start; i < puzzleData.length; i++) {
-            if (!puzzleData[i].isSpace && !puzzleData[i].isDiv && !puzzleData[i].user) {
-                selectedIdx = i; return;
-            }
-        }
+    function move(s) {
+        for(let i=s; i<p_data.length; i++) if(!p_data[i].isSp && !p_data[i].isDiv && !p_data[i].usr) { selIdx = i; return; }
+        for(let i=0; i<s; i++) if(!p_data[i].isSp && !p_data[i].isDiv && !p_data[i].usr) { selIdx = i; return; }
     }
 
-    function isLetterFinished(l) {
-        const matches = puzzleData.filter(p => p.correct === l);
-        return matches.length > 0 && matches.every(p => p.user === l);
-    }
-
-    /** РЕКЛАМА И ПОДСКАЗКИ (п. 4.5.1) **/
-    function useHint() {
-        if (!sdk) { execHint(); return; }
-        sdk.adv.showRewardedVideo({ callbacks: { onRewarded: execHint } });
-    }
-
-    function execHint() {
-        const p = puzzleData[selectedIdx];
-        if (p && !p.isSpace && !p.isDiv) {
-            p.user = p.correct;
-            score += 5;
-            autoSelectNext(selectedIdx + 1);
-            updateUI();
+    function win() {
+        if(p_data.length > 0 && p_data.every(p => p.isSp || p.isDiv || p.usr === p.corr)) {
+            document.getElementById('ui-auth-name').innerText = "— " + p_obj.a;
+            document.getElementById('sc-win').style.display = 'flex';
         }
     }
 
-    function checkWin() {
-        if (puzzleData.length > 0 && puzzleData.every(p => p.isSpace || p.isDiv || p.user === p.correct)) {
-            document.getElementById('win-quote-author').innerText = "— " + phraseObj.a;
-            document.getElementById('win-phrase').innerText = phraseObj.q;
-            document.getElementById('screen-win').style.display = 'flex';
-        }
+    function hint() {
+        if (!sdk) { execH(); return; }
+        sdk.adv.showRewardedVideo({ callbacks: { onRewarded: execH } });
     }
 
-    function nextLevel() {
-        document.getElementById('screen-win').style.display = 'none';
-        if (sdk) sdk.adv.showFullscreenAdv({ callbacks: { onClose: initLevel } });
-        else initLevel();
+    function execH() {
+        const p = p_data[selIdx];
+        if (p && !p.usr) { p.usr = p.corr; score += 5; move(selIdx + 1); upd(); }
     }
 
-    /** ОБРАБОТЧИКИ КЛАВИАТУРЫ (п. 1.6.2.4) **/
+    function next() {
+        document.getElementById('sc-win').style.display = 'none';
+        if (sdk) sdk.adv.showFullscreenAdv({ callbacks: { onClose: initLvl } }); else initLvl();
+    }
+
+    function docR() { const d = document.createElement('div'); d.className = 'word'; return d; }
+    
     window.addEventListener('keydown', (e) => {
         const k = e.key.toUpperCase();
-        if (layouts[lang].join('').includes(k)) handleInput(k);
-        // Обработка ТВ-пульта (упрощенная)
-        if (e.key === 'Backspace') location.reload();
+        if(layouts[lang].join('').includes(k)) tap(k);
     });
 
-    /** СНЕЖИНКИ (ЭКОНОМНЫЕ) **/
-    const snowCont = document.getElementById('snow-container');
-    for (let i = 0; i < 20; i++) {
+    setInterval(() => {
         const sf = document.createElement('div');
         sf.className = 'snowflake'; sf.innerText = '❄';
         sf.style.left = Math.random() * 100 + 'vw';
-        sf.style.animationDuration = (Math.random() * 5 + 5) + 's';
-        sf.style.animationDelay = (Math.random() * 5) + 's';
-        snowCont.appendChild(sf);
-    }
+        sf.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        document.getElementById('snow-container').appendChild(sf);
+        setTimeout(() => sf.remove(), 4000);
+    }, 400);
 </script>
 </body>
 </html>
